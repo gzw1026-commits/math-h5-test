@@ -131,10 +131,11 @@ function solidShapeSvg(kind) {
       </svg>
     `,
     长方体: `
-      <svg class="shape-svg" viewBox="0 0 160 130" role="img" aria-label="长方体">
-        <polygon points="36,42 112,42 132,60 56,60" fill="#bfe0f5" stroke="#376f99" stroke-width="5" stroke-linejoin="round"/>
-        <polygon points="56,60 132,60 132,96 56,96" fill="#69a7d9" stroke="#376f99" stroke-width="5" stroke-linejoin="round"/>
-        <polygon points="36,42 56,60 56,96 36,78" fill="#8bc1e6" stroke="#376f99" stroke-width="5" stroke-linejoin="round"/>
+      <svg class="shape-svg wide-shape-svg" viewBox="0 0 220 130" role="img" aria-label="长方体">
+        <polygon points="26,42 158,42 194,66 62,66" fill="#bfe0f5" stroke="#376f99" stroke-width="5" stroke-linejoin="round"/>
+        <polygon points="62,66 194,66 194,98 62,98" fill="#69a7d9" stroke="#376f99" stroke-width="5" stroke-linejoin="round"/>
+        <polygon points="26,42 62,66 62,98 26,74" fill="#8bc1e6" stroke="#376f99" stroke-width="5" stroke-linejoin="round"/>
+        <line x1="158" y1="42" x2="194" y2="66" stroke="#376f99" stroke-width="5"/>
       </svg>
     `,
     圆柱: `
@@ -176,8 +177,49 @@ function makeQuestion(type, difficulty, prompt, answer, options, visual = "", in
   return input === "number" ? inputQuestion(question) : optionQuestion(question);
 }
 
+function normalizeQuestionVisual(visual = "") {
+  return visual.replace(/\s+/g, " ").replace(/id="[^"]+"/g, "").slice(0, 260);
+}
+
+function getQuestionKey(question) {
+  return [
+    question.type,
+    question.prompt,
+    question.answer,
+    normalizeQuestionVisual(question.visual),
+  ].join("|");
+}
+
+function createUniqueQuestion(type, usedKeys, usedTypeAnswers) {
+  let fallback = null;
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const question = makers[type]();
+    const exactKey = getQuestionKey(question);
+    const typeAnswerKey = `${question.type}|${question.answer}`;
+    fallback = fallback || question;
+    if (!usedKeys.has(exactKey) && !usedTypeAnswers.has(typeAnswerKey)) {
+      usedKeys.add(exactKey);
+      usedTypeAnswers.add(typeAnswerKey);
+      return question;
+    }
+  }
+  const fallbackKey = getQuestionKey(fallback);
+  usedKeys.add(fallbackKey);
+  usedTypeAnswers.add(`${fallback.type}|${fallback.answer}`);
+  return fallback;
+}
+
 function getSpeechText(question) {
-  return question?.prompt || "";
+  return (question?.prompt || "")
+    .replace(/□/g, "空格")
+    .replace(/\?/g, "多少")
+    .replace(/\+/g, " 加 ")
+    .replace(/-/g, " 减 ")
+    .replace(/=/g, " 等于 ")
+    .replace(/>/g, " 大于 ")
+    .replace(/</g, " 小于 ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function speakQuestion(question) {
@@ -335,12 +377,12 @@ const makers = {
     const rest = b - need;
     const item = sample([
       {
-        prompt: "看十格图：要先放几个红点，第一格盘刚好满10？",
+        prompt: "看图：左边十格里已经有一些点。还差几个点，十格就满了？",
         answer: need,
         visual: makeTenFrame(a, b),
       },
       {
-        prompt: "看十格图：第一格盘满10后，外面还剩几个红点？",
+        prompt: "看图：把外面的点拿去补满左边十格后，外面还剩几个点？",
         answer: rest,
         visual: makeTenFrame(a, b),
       },
@@ -510,7 +552,9 @@ function generateQuestions() {
     "hundredSense",
     "planeShape",
   ];
-  return shuffle(plan.map((type) => makers[type]()));
+  const usedKeys = new Set();
+  const usedTypeAnswers = new Set();
+  return shuffle(plan.map((type) => createUniqueQuestion(type, usedKeys, usedTypeAnswers)));
 }
 
 function startPractice() {
