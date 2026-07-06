@@ -20,7 +20,9 @@
 
 body {
   margin: 0;
+  height: 100vh;
   min-height: 100vh;
+  overflow: hidden;
   color: var(--ink);
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
@@ -42,20 +44,26 @@ button {
 
 .app {
   width: min(430px, 100%);
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
   margin: 0 auto;
-  padding: 14px;
+  padding: 10px;
 }
 
 .shell {
+  height: 100%;
+  overflow: hidden;
   display: grid;
-  gap: 22px;
+  gap: 12px;
 }
 
 .hero {
-  min-height: auto;
+  height: 100%;
+  overflow: hidden;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: 18px;
+  gap: 10px;
 }
 
 .topbar,
@@ -99,12 +107,12 @@ button {
   display: grid;
   grid-template-columns: 1fr;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
 }
 
 .hero-copy {
   display: grid;
-  gap: 18px;
+  gap: 10px;
 }
 
 h1,
@@ -116,7 +124,7 @@ p {
 
 h1 {
   max-width: 100%;
-  font-size: 34px;
+  font-size: 28px;
   line-height: 1.08;
   letter-spacing: 0;
 }
@@ -124,49 +132,50 @@ h1 {
 .lead {
   max-width: 100%;
   color: var(--muted);
-  font-size: 16px;
-  line-height: 1.65;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 2px;
 }
 
 .parent-guide {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
+  gap: 8px;
   max-width: 100%;
 }
 
 .guide-step {
   display: grid;
-  gap: 6px;
+  gap: 3px;
   min-height: auto;
   border: 2px solid rgba(31, 122, 98, 0.16);
   border-radius: 8px;
-  padding: 14px;
+  padding: 9px 10px;
   background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 10px 24px rgba(38, 50, 56, 0.08);
 }
 
 .guide-step strong {
   color: var(--leaf);
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .guide-step span {
   color: var(--muted);
-  line-height: 1.55;
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .primary,
 .secondary,
 .ghost {
-  min-height: 48px;
+  min-height: 42px;
   border-radius: 999px;
   padding: 0 20px;
   display: inline-flex;
@@ -215,7 +224,7 @@ h1 {
 }
 
 .standard-item {
-  padding: 14px;
+  padding: 10px;
 }
 
 .standard-item strong {
@@ -314,18 +323,20 @@ h1 {
 
 .footer-hint {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .test-layout {
-  min-height: auto;
+  height: 100%;
+  overflow: hidden;
   display: grid;
   grid-template-rows: auto auto 1fr;
-  gap: 18px;
+  gap: 8px;
 }
 
 .progress-wrap {
-  height: 10px;
+  height: 8px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(31, 122, 98, 0.12);
@@ -342,30 +353,33 @@ h1 {
 .test-main {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
+  gap: 8px;
+  min-height: 0;
   align-items: start;
 }
 
 .question-card {
-  min-height: auto;
-  padding: 16px;
+  height: 100%;
+  min-height: 0;
+  padding: 11px;
   display: grid;
   grid-template-rows: auto auto 1fr auto;
-  gap: 16px;
+  gap: 9px;
+  overflow: hidden;
 }
 
 .question-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 5px;
 }
 
 .tag {
   border-radius: 999px;
-  padding: 7px 11px;
+  padding: 5px 8px;
   color: var(--leaf);
   background: var(--mint);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -380,13 +394,13 @@ h1 {
 }
 
 .read-button {
-  min-height: 34px;
+  min-height: 30px;
   border: 1px solid rgba(31, 122, 98, 0.25);
   border-radius: 999px;
   padding: 0 12px;
   color: var(--leaf);
   background: #ffffff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -395,18 +409,20 @@ h1 {
 }
 
 .question-title {
-  font-size: 25px;
-  line-height: 1.25;
+  font-size: 22px;
+  line-height: 1.2;
   letter-spacing: 0;
 }
 
 .question-visual {
   display: grid;
-  min-height: 130px;
+  min-height: 86px;
+  max-height: 150px;
+  overflow: hidden;
   align-content: center;
   gap: 12px;
   border-radius: 8px;
-  padding: 14px;
+  padding: 9px;
   background: var(--soft);
 }
 
@@ -420,8 +436,8 @@ h1 {
 }
 
 .dot {
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--coral);
   box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.08);
@@ -431,15 +447,15 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 18px;
+  gap: 10px;
 }
 
 .ten-frame {
   display: grid;
-  grid-template-columns: repeat(5, 34px);
-  grid-template-rows: repeat(2, 34px);
-  gap: 6px;
-  padding: 8px;
+  grid-template-columns: repeat(5, 28px);
+  grid-template-rows: repeat(2, 28px);
+  gap: 4px;
+  padding: 6px;
   border: 3px solid var(--leaf);
   border-radius: 8px;
   background: #ffffff;
@@ -454,8 +470,8 @@ h1 {
 }
 
 .ten-dot {
-  width: 20px;
-  height: 20px;
+  width: 17px;
+  height: 17px;
   background: var(--sky);
 }
 
@@ -467,8 +483,8 @@ h1 {
 }
 
 .extra-dot {
-  width: 20px;
-  height: 20px;
+  width: 17px;
+  height: 17px;
 }
 
 .shape {
@@ -547,17 +563,17 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  min-height: 150px;
+  min-height: 110px;
 }
 
 .shape-svg {
-  width: min(210px, 72vw);
-  height: 150px;
+  width: min(180px, 68vw);
+  height: 116px;
   display: block;
 }
 
 .wide-shape-svg {
-  width: min(280px, 82vw);
+  width: min(230px, 76vw);
 }
 
 .number-line {
@@ -568,7 +584,7 @@ h1 {
 
 .num-chip {
   min-width: 44px;
-  height: 44px;
+  height: 38px;
   display: inline-grid;
   place-items: center;
   border-radius: 8px;
@@ -580,24 +596,25 @@ h1 {
 
 .answer-area {
   display: grid;
-  gap: 14px;
+  gap: 8px;
+  min-height: 0;
 }
 
 .options {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
 }
 
 .option {
-  min-height: 64px;
+  min-height: 50px;
   border: 2px solid transparent;
   border-radius: 8px;
-  padding: 12px;
+  padding: 8px;
   color: var(--ink);
   background: #ffffff;
   box-shadow: 0 8px 18px rgba(38, 50, 56, 0.08);
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 900;
 }
 
@@ -608,11 +625,11 @@ h1 {
 
 .number-input {
   width: min(360px, 100%);
-  height: 72px;
+  height: 58px;
   border: 2px solid var(--line);
   border-radius: 8px;
   padding: 0 18px;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 900;
   background: #ffffff;
 }
@@ -620,14 +637,19 @@ h1 {
 .question-actions {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  flex-direction: column;
+  gap: 7px;
+  flex-direction: row;
+}
+
+.question-actions .primary,
+.question-actions .secondary {
+  flex: 1;
+  width: auto;
+  padding: 0 10px;
 }
 
 .panel {
-  padding: 18px;
-  display: grid;
-  gap: 14px;
+  display: none;
 }
 
 .timer {
@@ -696,23 +718,27 @@ h1 {
 }
 
 .result-layout {
+  height: 100%;
+  overflow: hidden;
   display: grid;
-  gap: 18px;
+  gap: 8px;
+  grid-template-rows: auto auto 1fr;
 }
 
 .result-hero {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
+  gap: 8px;
+  min-height: 0;
 }
 
 .result-card {
-  padding: 18px;
+  padding: 12px;
 }
 
 .level {
   color: var(--coral);
-  font-size: 34px;
+  font-size: 28px;
   line-height: 1.1;
   letter-spacing: 0;
 }
@@ -720,30 +746,34 @@ h1 {
 .score-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 22px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .report-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
+  gap: 8px;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 4px;
 }
 
 .mini-card {
-  padding: 18px;
+  padding: 12px;
   box-shadow: none;
 }
 
 .mini-card h3 {
-  margin-bottom: 10px;
-  font-size: 18px;
+  margin-bottom: 6px;
+  font-size: 16px;
 }
 
 .mini-card p,
 .mini-card li {
   color: var(--muted);
-  line-height: 1.7;
+  line-height: 1.45;
+  font-size: 13px;
 }
 
 .mini-card ul {
@@ -807,9 +837,7 @@ h1 {
 }
 
 .poster {
-  position: static;
-  padding: 20px;
-  background: linear-gradient(160deg, #fffdf7, #e7f6ef);
+  display: none;
 }
 
 .poster-inner {
@@ -880,12 +908,16 @@ h1 {
   .question-title {
     font-size: 23px;
   }
+
+  .option {
+    font-size: 18px;
+    min-height: 46px;
+  }
 }
 
 @media (max-width: 520px) {
   .topbar,
-  .test-topbar,
-  .question-actions {
+  .test-topbar {
     align-items: stretch;
     flex-direction: column;
   }
