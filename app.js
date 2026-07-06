@@ -23,6 +23,8 @@
   var TYPE_META = {
     count: { label: "数数与数量", seconds: 14, dimension: "numberSense" },
     compare: { label: "数字比较", seconds: 12, dimension: "numberSense" },
+    decompose: { label: "数的分合", seconds: 18, dimension: "numberSense" },
+    placeValue: { label: "十和一", seconds: 18, dimension: "numberSense" },
     add10: { label: "10以内加法", seconds: 15, dimension: "calculation" },
     subtract10: { label: "10以内减法", seconds: 16, dimension: "calculation" },
     teenSense: { label: "11-20数感", seconds: 16, dimension: "numberSense" },
@@ -30,7 +32,9 @@
     makeTen: { label: "凑十看图", seconds: 24, dimension: "calculation" },
     equation: { label: "算式填空", seconds: 26, dimension: "application" },
     expressionCompare: { label: "式子比较", seconds: 26, dimension: "application" },
+    difference: { label: "比多比少", seconds: 26, dimension: "application" },
     solidShape: { label: "立体图形", seconds: 15, dimension: "geometry" },
+    position: { label: "顺序方位", seconds: 20, dimension: "geometry" },
     pattern: { label: "规律推理", seconds: 24, dimension: "application" },
     logic: { label: "逻辑推理", seconds: 32, dimension: "application" },
     story: { label: "生活应用题", seconds: 30, dimension: "application" },
@@ -139,10 +143,35 @@
     return '<div class="ten-visual"><div class="ten-frame">' + cells + '</div><div class="extra-dots">' + extras + "</div></div>";
   }
 
+  function splitOptions(need, rest) {
+    var answer = need + "和" + rest;
+    var values = [answer];
+    var total = need + rest;
+    var first;
+    var i;
+    var text;
+    for (i = 1; i < total; i += 1) {
+      first = i;
+      if (first !== need) {
+        text = first + "和" + (total - first);
+        if (!hasOwn(values, text)) values.push(text);
+      }
+      if (values.length >= 4) break;
+    }
+    return shuffle(values);
+  }
+
   function makeNumberLine(numbers) {
     var html = '<div class="number-line">';
     var i;
     for (i = 0; i < numbers.length; i += 1) html += '<span class="num-chip">' + escapeHtml(numbers[i]) + "</span>";
+    return html + "</div>";
+  }
+
+  function makeSymbolRow(symbols) {
+    var html = '<div class="symbol-row">';
+    var i;
+    for (i = 0; i < symbols.length; i += 1) html += '<span class="symbol-chip">' + escapeHtml(symbols[i]) + "</span>";
     return html + "</div>";
   }
 
@@ -373,25 +402,43 @@
 
   var makers = {
     count: function () {
-      var count = rand(5, 12);
-      return makeQuestion("count", "foundation", "数一数，一共有几个圆点？", count, uniqueOptions(count, 1, 16), makeDots(count));
+      var count = rand(8, 16);
+      return makeQuestion("count", "foundation", "数一数，一共有几个圆点？", count, uniqueOptions(count, 1, 20), makeDots(count));
     },
     compare: function () {
-      var a = rand(4, 20);
-      var b = rand(4, 20);
+      var a = rand(5, 20);
+      var b = rand(5, 20);
+      var c = rand(5, 20);
       var answer;
+      var guard = 0;
       if (a === b) b += 1;
-      answer = Math.max(a, b);
-      return makeQuestion("compare", "foundation", a + " 和 " + b + "，哪个数更大？", answer, uniqueOptions(answer, 1, 24), makeNumberLine([a, b]));
+      if (b > 20) b = 5;
+      while ((c === a || c === b) && guard < 30) {
+        c = rand(5, 20);
+        guard += 1;
+      }
+      answer = Math.max(a, b, c);
+      return makeQuestion("compare", "foundation", "这三个数中，哪个数最大？", answer, shuffle([a, b, c]), makeNumberLine([a, b, c]));
+    },
+    decompose: function () {
+      var total = rand(6, 10);
+      var known = rand(2, total - 2);
+      var answer = total - known;
+      return makeQuestion("decompose", "foundation", total + " 可以分成 " + known + " 和几？", answer, uniqueOptions(answer, 0, 10), makeNumberLine([known, "?", total]));
+    },
+    placeValue: function () {
+      var ones = rand(1, 9);
+      var answer = 10 + ones;
+      return makeQuestion("placeValue", "grade1", "1个十和 " + ones + " 个一合起来是几？", answer, uniqueOptions(answer, 8, 20), makeNumberLine(["1个十", ones + "个一"]));
     },
     add10: function () {
-      var a = rand(1, 8);
-      var b = rand(1, 10 - a);
+      var a = rand(2, 8);
+      var b = rand(2, Math.min(7, 10 - a));
       return makeQuestion("add10", "foundation", a + " + " + b + " = ?", a + b, uniqueOptions(a + b, 0, 12));
     },
     subtract10: function () {
       var a = rand(4, 10);
-      var b = rand(1, a);
+      var b = rand(2, a - 1);
       return makeQuestion("subtract10", "foundation", a + " - " + b + " = ?", a - b, uniqueOptions(a - b, 0, 10));
     },
     teenSense: function () {
@@ -415,16 +462,14 @@
         [7, 5],
         [8, 6],
         [9, 4],
+        [6, 7],
+        [7, 6],
       ]);
       var a = pair[0];
       var b = pair[1];
       var need = 10 - a;
       var rest = b - need;
-      var item = sample([
-        { prompt: "看图：左边十格里已经有一些点。还差几个点，十格就满了？", answer: need, visual: makeTenFrame(a, b) },
-        { prompt: "看图：把外面的点拿去补满左边十格后，外面还剩几个点？", answer: rest, visual: makeTenFrame(a, b) },
-      ]);
-      return makeQuestion("makeTen", "grade1", item.prompt, item.answer, uniqueOptions(item.answer, 0, 9), item.visual);
+      return makeQuestion("makeTen", "grade1", "看图：右边这堆点要怎么拆，才能先补满左边10格？", need + "和" + rest, splitOptions(need, rest), makeTenFrame(a, b));
     },
     equation: function () {
       var form = sample([1, 2, 3]);
@@ -456,18 +501,38 @@
       var answer = left === right ? "一样大" : left > right ? "左边大" : "右边大";
       return makeQuestion("expressionCompare", "application", leftA + " + " + leftB + " 和 " + rightA + " + " + rightB + "，哪边大？", answer, ["左边大", "右边大", "一样大", "不能确定"]);
     },
+    difference: function () {
+      var bigger = rand(9, 18);
+      var smaller = rand(4, bigger - 3);
+      var names = sample([
+        ["小红", "小明", "朵花"],
+        ["乐乐", "安安", "颗星"],
+        ["哥哥", "妹妹", "块积木"],
+      ]);
+      var prompt = names[0] + "有 " + bigger + " " + names[2] + "，" + names[1] + "有 " + smaller + " " + names[2] + "。" + names[0] + "比" + names[1] + "多几个？";
+      return makeQuestion("difference", "application", prompt, bigger - smaller, uniqueOptions(bigger - smaller, 1, 16));
+    },
     solidShape: function () {
       var options = ["球", "正方体", "圆柱", "长方体"];
       var answer = sample(options);
       return makeQuestion("solidShape", "grade1", "这个立体图形最像什么？", answer, shuffle(options), solidShapeSvg(answer));
+    },
+    position: function () {
+      var rows = [
+        { seq: ["●", "▲", "■", "★", "◆"], answer: 4, target: "★" },
+        { seq: ["圆", "正", "三", "长", "圆"], answer: 2, target: "正" },
+        { seq: ["1", "3", "5", "7", "9"], answer: 3, target: "5" },
+      ];
+      var row = sample(rows);
+      return makeQuestion("position", "foundation", "从左往右数，" + row.target + " 排第几？", row.answer, ["1", "2", "3", "4", "5"], makeSymbolRow(row.seq));
     },
     pattern: function () {
       var patterns = [
         { seq: ["●", "▲", "●", "▲", "●", "?"], answer: "▲", options: ["▲", "●", "■", "5"] },
         { seq: [2, 4, 6, 8, "?"], answer: 10, options: [9, 10, 11, 12] },
         { seq: [5, 7, 9, 11, "?"], answer: 13, options: [12, 13, 14, 15] },
-        { seq: [1, 2, 4, 7, 11, "?"], answer: 16, options: [14, 15, 16, 17] },
-        { seq: [18, 16, 13, 9, "?"], answer: 4, options: [3, 4, 5, 6] },
+        { seq: [3, 6, 9, 12, "?"], answer: 15, options: [13, 14, 15, 16] },
+        { seq: [16, 14, 12, 10, "?"], answer: 8, options: [6, 8, 9, 12] },
         { seq: ["红", "黄", "黄", "红", "黄", "黄", "?"], answer: "红", options: ["红", "黄", "蓝", "绿"] },
       ];
       var p = sample(patterns);
@@ -514,7 +579,7 @@
   };
 
   function generateQuestions() {
-    var plan = ["count", "compare", "add10", "subtract10", "teenSense", "teenSense", "add20", "makeTen", "solidShape", "pattern", "pattern", "logic", "logic", "equation", "expressionCompare", "story", "story", "borrowSub", "hundredSense", "planeShape"];
+    var plan = ["count", "compare", "decompose", "placeValue", "add10", "subtract10", "teenSense", "add20", "makeTen", "equation", "expressionCompare", "difference", "solidShape", "position", "pattern", "logic", "story", "borrowSub", "hundredSense", "planeShape"];
     var usedKeys = {};
     var usedTypeAnswers = {};
     var questions = [];
@@ -581,6 +646,7 @@
     var usedSeconds;
     if (!rawAnswer) return;
     usedSeconds = elapsedSeconds(state.questionStartedAt);
+    state.answers = state.answers.slice(0, state.index);
     state.answers.push({
       question: question,
       answer: rawAnswer,
@@ -596,6 +662,17 @@
       state.questionStartedAt = new Date().getTime();
       renderAndMaybeSpeak(true);
     }
+  }
+
+  function goPreviousQuestion() {
+    if (state.screen !== "test") return;
+    if (state.index <= 0) return;
+    safeCancelSpeech();
+    state.index -= 1;
+    state.answers = state.answers.slice(0, state.index);
+    state.selectedAnswer = "";
+    state.questionStartedAt = new Date().getTime();
+    renderAndMaybeSpeak(false);
   }
 
   function finishTest() {
@@ -863,7 +940,15 @@
       state.questions.length +
       ' 题</span></div><button class="ghost" data-action="restart">重新开始</button></div><div class="progress-wrap"><div class="progress-bar" style="width:' +
       progress +
-      '%"></div></div><div class="test-main"><article class="question-card"><div class="question-meta"><span class="tag">' +
+      '%"></div></div><div class="timer-strip"><span>总计时<strong data-total-timer>' +
+      formatTime(totalElapsed) +
+      '</strong></span><span>本题<strong data-question-timer>' +
+      formatTime(questionElapsed) +
+      "</strong></span><span>已答<strong>" +
+      state.answers.length +
+      " / " +
+      state.questions.length +
+      '</strong></span></div><div class="test-main"><article class="question-card"><div class="question-meta"><span class="tag">' +
       question.typeLabel +
       '</span><span class="tag alt">' +
       difficultyLabel(question.difficulty) +
@@ -879,7 +964,9 @@
       question.visual +
       '</div><div class="answer-area">' +
       renderAnswerInput(question) +
-      '</div><div class="question-actions"><button class="secondary" data-action="skip">跳过这题</button><button class="primary" data-action="next" ' +
+      '</div><div class="question-actions"><button class="secondary" data-action="prev" ' +
+      (state.index > 0 ? "" : "disabled") +
+      '>上一题</button><button class="secondary" data-action="skip">跳过</button><button class="primary" data-action="next" ' +
       (state.selectedAnswer ? "" : "disabled") +
       '>提交答案</button></div></article><aside class="panel"><div><p class="small">总用时</p><div class="timer" data-total-timer>' +
       formatTime(totalElapsed) +
@@ -1066,6 +1153,7 @@
       state.selectedAnswer = "（跳过）";
       answerCurrent();
     }
+    if (action === "prev") goPreviousQuestion();
     if (action === "next") answerCurrent();
     if (action === "copy") copyResult();
   }

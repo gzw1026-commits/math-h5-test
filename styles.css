@@ -331,7 +331,7 @@ h1 {
   height: 100%;
   overflow: hidden;
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
   gap: 8px;
 }
 
@@ -348,6 +348,36 @@ h1 {
   border-radius: 999px;
   background: linear-gradient(90deg, var(--leaf), var(--sun), var(--coral));
   transition: width 200ms ease;
+}
+
+.timer-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.timer-strip span {
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid rgba(35, 47, 52, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.timer-strip strong {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 950;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .test-main {
@@ -478,6 +508,7 @@ h1 {
 .extra-dots {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   max-width: 170px;
   gap: 8px;
 }
@@ -582,6 +613,13 @@ h1 {
   gap: 8px;
 }
 
+.symbol-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .num-chip {
   min-width: 44px;
   height: 38px;
@@ -591,6 +629,19 @@ h1 {
   color: var(--ink);
   background: #ffffff;
   border: 1px solid var(--line);
+  font-weight: 900;
+}
+
+.symbol-chip {
+  min-width: 42px;
+  height: 42px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--ink);
+  background: #ffffff;
+  border: 1px solid var(--line);
+  font-size: 20px;
   font-weight: 900;
 }
 
@@ -646,6 +697,11 @@ h1 {
   flex: 1;
   width: auto;
   padding: 0 10px;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.48;
 }
 
 .panel {
