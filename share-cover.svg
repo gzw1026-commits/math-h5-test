@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+  <rect width="600" height="600" rx="56" fill="#fffdf7"/>
+  <rect x="42" y="42" width="516" height="516" rx="38" fill="#dff3ea" stroke="#1f7a62" stroke-width="10"/>
+  <circle cx="150" cy="150" r="54" fill="#e86f55"/>
+  <circle cx="450" cy="150" r="54" fill="#69a7d9"/>
+  <rect x="102" y="382" width="96" height="96" rx="18" fill="#8067b7"/>
+  <rect x="402" y="382" width="96" height="96" rx="18" fill="#f2b84b"/>
+  <text x="300" y="260" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="54" font-weight="800" fill="#263238">小学数学</text>
+  <text x="300" y="326" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="42" font-weight="700" fill="#1f7a62">入学准备测评</text>
+  <text x="300" y="520" text-anchor="middle" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="26" font-weight="600" fill="#63727a">20题 · 数感 · 图形 · 应用表达</text>
+</svg>
