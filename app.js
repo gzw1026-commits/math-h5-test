@@ -6,11 +6,14 @@
 
   var SHARE_CONFIG = {
     title: "小学数学入学准备测评",
-    desc: "5-7分钟测一测孩子的20以内数感、10以内加减理解、图形方位、规律分类和简单应用表达。",
-    coverPath: "share-cover.svg",
+    desc: "20道题，5分钟，测一测孩子能否顺利衔接一年级数学。",
+    coverPath: "/share-cover.png",
     wechatAppId: "",
     wechatSignatureEndpoint: "",
   };
+
+  var STORAGE_RESULT_KEY = "math-readiness-last-result";
+  var STORAGE_UNLOCK_KEY = "math-readiness-result-unlocked";
 
   var DIMENSIONS = {
     numberSense: "数感与数量",
@@ -54,6 +57,12 @@
     tick: null,
     now: new Date().getTime(),
     result: null,
+    unlockOverlay: false,
+    toastMessage: "",
+    toastTimer: null,
+    autoAdvanceTimer: null,
+    analysisTimer: null,
+    posterVisible: false,
     practiceQuestion: null,
     practiceAnswer: "",
     practiceChecked: false,
@@ -316,6 +325,75 @@
     } catch (error) {
       return false;
     }
+  }
+
+  function isWeChatBrowser() {
+    try {
+      return /MicroMessenger/i.test(navigator.userAgent || "");
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function safeStorageGet(key) {
+    try {
+      if (!window.localStorage) return "";
+      return window.localStorage.getItem(key) || "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function safeStorageSet(key, value) {
+    try {
+      if (!window.localStorage) return false;
+      window.localStorage.setItem(key, value);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function safeStorageRemove(key) {
+    try {
+      if (window.localStorage) window.localStorage.removeItem(key);
+    } catch (error) {}
+  }
+
+  function persistAssessment(unlocked) {
+    try {
+      safeStorageSet(
+        STORAGE_RESULT_KEY,
+        JSON.stringify({
+          result: state.result,
+          answers: state.answers,
+        })
+      );
+      safeStorageSet(STORAGE_UNLOCK_KEY, unlocked ? "1" : "0");
+    } catch (error) {}
+  }
+
+  function restoreUnlockedAssessment() {
+    var raw;
+    var saved;
+    try {
+      if (safeStorageGet(STORAGE_UNLOCK_KEY) !== "1") return false;
+      raw = safeStorageGet(STORAGE_RESULT_KEY);
+      if (!raw) return false;
+      saved = JSON.parse(raw);
+      if (!saved || !saved.result || !saved.answers) return false;
+      state.result = saved.result;
+      state.answers = saved.answers;
+      state.screen = "result";
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function clearStoredAssessment() {
+    safeStorageRemove(STORAGE_RESULT_KEY);
+    safeStorageRemove(STORAGE_UNLOCK_KEY);
   }
 
   function getShareImageUrl() {
@@ -604,10 +682,14 @@
 
   function startTest() {
     safeCancelSpeech();
+    clearFlowTimers();
+    clearStoredAssessment();
     state.questions = generateQuestions();
     state.index = 0;
     state.answers = [];
     state.selectedAnswer = "";
+    state.toastMessage = "";
+    state.posterVisible = false;
     state.startedAt = new Date().getTime();
     state.questionStartedAt = new Date().getTime();
     state.screen = "test";
@@ -627,6 +709,32 @@
   function stopTicker() {
     clearInterval(state.tick);
     state.tick = null;
+  }
+
+  function clearFlowTimers() {
+    try {
+      clearTimeout(state.toastTimer);
+      clearTimeout(state.autoAdvanceTimer);
+      clearTimeout(state.analysisTimer);
+    } catch (error) {}
+    state.toastTimer = null;
+    state.autoAdvanceTimer = null;
+    state.analysisTimer = null;
+  }
+
+  function showProgressToast() {
+    var percent = Math.round((state.answers.length / state.questions.length) * 100);
+    if (!state.answers.length || state.answers.length >= state.questions.length) return;
+    if (state.answers.length % 5 !== 0) return;
+    try {
+      clearTimeout(state.toastTimer);
+    } catch (error) {}
+    state.toastMessage = "已完成" + percent + "%，继续加油！";
+    render();
+    state.toastTimer = window.setTimeout(function () {
+      state.toastMessage = "";
+      if (state.screen === "test") render();
+    }, 2000);
   }
 
   function elapsedSeconds(from, to) {
@@ -660,6 +768,7 @@
     } else {
       state.index += 1;
       state.questionStartedAt = new Date().getTime();
+      showProgressToast();
       renderAndMaybeSpeak(true);
     }
   }
@@ -678,7 +787,22 @@
   function finishTest() {
     safeCancelSpeech();
     stopTicker();
+    clearFlowTimers();
     state.result = calculateResult(state.answers);
+    state.unlockOverlay = false;
+    state.posterVisible = false;
+    persistAssessment(false);
+    state.screen = "analyzing";
+    render();
+    state.analysisTimer = window.setTimeout(function () {
+      state.screen = "unlock";
+      render();
+    }, 1500);
+  }
+
+  function unlockResult() {
+    state.unlockOverlay = false;
+    persistAssessment(true);
     state.screen = "result";
     render();
   }
@@ -874,7 +998,7 @@
 
   function renderHome() {
     app.innerHTML =
-      '<section class="hero"><div class="topbar"><div class="brand"><span class="brand-mark">数</span><span>小学数学入学准备测评</span></div><span class="pill">20题 · 5-7分钟</span></div><div class="hero-grid"><div class="hero-copy"><h1>测一测，孩子能不能顺利接上一年级数学</h1><p class="lead">家长读题，孩子口答，家长代为点击或输入答案。题目随机生成，重点看20以内数感、10以内加减理解、图形和应用表达。</p><div class="parent-guide"><div class="guide-step"><strong>1. 家长读题</strong><span>系统可自动朗读；不支持时请家长读题。</span></div><div class="guide-step"><strong>2. 孩子口答</strong><span>让孩子说答案或讲想法，不考手机操作。</span></div><div class="guide-step"><strong>3. 家长录入</strong><span>系统自动计时、评分，并生成错题复盘。</span></div></div><div class="actions"><button class="primary" data-action="practice">试做一题</button><button class="secondary" data-action="start">正式开始</button><button class="secondary" data-action="preview">评级标准</button><button class="ghost" data-action="share-page">分享</button></div></div></div><p class="footer-hint">结果仅用于家庭观察和暑假练习规划，不作为医学或教育诊断。</p></section>';
+      '<section class="hero page-fade"><div class="home-hero"><div class="free-badge">免费测评</div><h1>测一测<br>孩子能不能顺利衔接一年级数学</h1><p class="lead hero-lead">20道题｜约5分钟完成<br>覆盖20以内数感、加减法、图形、逻辑思维。</p></div><div class="parent-guide value-guide"><div class="guide-step"><span class="step-icon">1</span><strong>家长读题</strong><span>按题目轻声读给孩子听。</span></div><div class="guide-step"><span class="step-icon">2</span><strong>孩子回答</strong><span>孩子口答，家长代为点击。</span></div><div class="guide-step"><span class="step-icon">3</span><strong>AI生成测评报告</strong><span>生成等级、优势和家庭建议。</span></div></div><div class="home-cta"><button class="primary hero-button" data-action="start">立即免费测评</button><div class="sub-actions"><button class="text-button" data-action="practice">试做一题</button><button class="text-button" data-action="share-page">分享给家长</button></div><button class="link-button" data-action="preview">查看评分标准 &gt;</button></div><p class="footer-hint">结果仅用于家庭观察和暑假练习规划，不作为医学或教育诊断。</p></section>';
   }
 
   function renderPractice() {
@@ -931,8 +1055,16 @@
     var totalElapsed = elapsedSeconds(state.startedAt, state.now);
     var questionElapsed = elapsedSeconds(state.questionStartedAt, state.now);
     var progress = Math.round((state.index / state.questions.length) * 100);
+    var actionHtml =
+      question.input === "number"
+        ? '<button class="secondary" data-action="prev" ' +
+          (state.index > 0 ? "" : "disabled") +
+          '>上一题</button><button class="secondary" data-action="skip">跳过</button><button class="primary" data-action="next" ' +
+          (state.selectedAnswer ? "" : "disabled") +
+          ">提交答案</button>"
+        : '<button class="secondary" data-action="prev" ' + (state.index > 0 ? "" : "disabled") + '>上一题</button><button class="secondary" data-action="skip">跳过</button>';
     app.innerHTML =
-      '<section class="test-layout"><div class="test-topbar"><div class="brand"><span class="brand-mark">' +
+      '<section class="test-layout page-fade"><div class="test-topbar"><div class="brand"><span class="brand-mark">' +
       (state.index + 1) +
       "</span><span>第 " +
       (state.index + 1) +
@@ -940,7 +1072,9 @@
       state.questions.length +
       ' 题</span></div><button class="ghost" data-action="restart">重新开始</button></div><div class="progress-wrap"><div class="progress-bar" style="width:' +
       progress +
-      '%"></div></div><div class="timer-strip"><span>总计时<strong data-total-timer>' +
+      '%"></div></div><div class="progress-blocks">' +
+      renderProgressBlocks() +
+      '</div><div class="timer-strip"><span>总计时<strong data-total-timer>' +
       formatTime(totalElapsed) +
       '</strong></span><span>本题<strong data-question-timer>' +
       formatTime(questionElapsed) +
@@ -964,11 +1098,9 @@
       question.visual +
       '</div><div class="answer-area">' +
       renderAnswerInput(question) +
-      '</div><div class="question-actions"><button class="secondary" data-action="prev" ' +
-      (state.index > 0 ? "" : "disabled") +
-      '>上一题</button><button class="secondary" data-action="skip">跳过</button><button class="primary" data-action="next" ' +
-      (state.selectedAnswer ? "" : "disabled") +
-      '>提交答案</button></div></article><aside class="panel"><div><p class="small">总用时</p><div class="timer" data-total-timer>' +
+      '</div><div class="question-actions">' +
+      actionHtml +
+      '</div></article><aside class="panel"><div><p class="small">总用时</p><div class="timer" data-total-timer>' +
       formatTime(totalElapsed) +
       '</div></div><div><p class="small">本题用时</p><div class="timer" data-question-timer>' +
       formatTime(questionElapsed) +
@@ -976,7 +1108,18 @@
       state.answers.length +
       '</strong><span>已完成</span></div><div class="stat"><strong>' +
       countCorrect(state.answers) +
-      '</strong><span>已答对</span></div></div><p class="small">基础题会更看熟练度；应用题、规律题会给孩子更多思考空间。</p></aside></div></section>';
+      '</strong><span>已答对</span></div></div><p class="small">基础题会更看熟练度；应用题、规律题会给孩子更多思考空间。</p></aside></div>' +
+      (state.toastMessage ? '<div class="encourage-toast">🎉 ' + escapeHtml(state.toastMessage) + "</div>" : "") +
+      "</section>";
+  }
+
+  function renderProgressBlocks() {
+    var html = "";
+    var i;
+    for (i = 0; i < state.questions.length; i += 1) {
+      html += '<span class="' + (i < state.answers.length ? "done" : i === state.index ? "active" : "") + '"></span>';
+    }
+    return html;
   }
 
   function renderAnswerInput(question) {
@@ -1004,17 +1147,107 @@
     if (questionTimer) questionTimer.innerHTML = formatTime(elapsedSeconds(state.questionStartedAt, state.now));
   }
 
+  function renderAnalyzing() {
+    app.innerHTML =
+      '<section class="complete-layout page-fade"><article class="complete-card"><div class="complete-burst">🎉</div><h1>恭喜！</h1><p class="lead">孩子已经完成全部20道题！</p><div class="analysis-box"><div class="analysis-spinner"></div><strong>AI正在分析孩子数学能力...</strong><span>正在生成能力画像、优势和家庭建议</span></div></article></section>';
+  }
+
+  function renderUnlock() {
+    var inWechat = isWeChatBrowser();
+    var buttonText = "分享后查看结果";
+    var overlayTitle = inWechat ? "点击右上角..." : "分享链接已准备好";
+    var overlayText = inWechat ? "发送给好友，或发送到微信群。分享后回到这里点击下方按钮查看完整报告。" : "可以发送给家人或班级群。完成后回到这里点击下方按钮查看完整报告。";
+    var overlay = state.unlockOverlay
+      ? '<div class="share-mask"><div class="share-arrow">...</div><div class="share-dialog"><h2>' +
+        overlayTitle +
+        '</h2><p>' +
+        overlayText +
+        '</p><div class="share-options"><span>发送给好友</span><span>发送到微信群</span></div><button class="primary" data-action="confirm-unlock">我已分享，查看结果</button></div></div>'
+      : "";
+    app.innerHTML =
+      '<section class="unlock-layout page-fade"><div class="topbar"><div class="brand"><span class="brand-mark">报</span><span>测评报告</span></div></div><article class="unlock-card"><p class="pill">数学能力分析已完成</p><h1>免费查看完整测评报告</h1><p class="lead">详细报告已生成。分享给家人或班级群即可查看完整报告。</p><div class="unlock-actions"><button class="primary hero-button" data-action="share-unlock">' +
+      buttonText +
+      '</button><button class="secondary" data-action="restart">重新测一次</button></div></article><p class="footer-hint">不会读取真实分享状态，点击确认后即可查看结果。</p>' +
+      overlay +
+      "</section>";
+  }
+
+  function getDisplayGrade(score) {
+    if (score >= 95) return { mark: "A+", text: "优秀" };
+    if (score >= 88) return { mark: "A", text: "优秀" };
+    if (score >= 78) return { mark: "B+", text: "良好" };
+    if (score >= 68) return { mark: "B", text: "稳步衔接" };
+    return { mark: "C", text: "需要加强" };
+  }
+
+  function getDimensionScore(dimensions, key) {
+    var i;
+    for (i = 0; i < dimensions.length; i += 1) {
+      if (dimensions[i].key === key) return Math.round(dimensions[i].accuracy * 100);
+    }
+    return 0;
+  }
+
+  function renderAbilityCards(result) {
+    var items = [
+      ["数感", getDimensionScore(result.dimensions, "numberSense")],
+      ["计算", getDimensionScore(result.dimensions, "calculation")],
+      ["图形", getDimensionScore(result.dimensions, "geometry")],
+      ["逻辑", getDimensionScore(result.dimensions, "application")],
+    ];
+    var html = "";
+    var i;
+    for (i = 0; i < items.length; i += 1) {
+      html += '<div class="ability-card"><span>' + items[i][0] + '</span><strong>' + items[i][1] + '</strong><div class="bar"><span style="width:' + items[i][1] + '%"></span></div></div>';
+    }
+    return html;
+  }
+
+  function renderAbilityRadar(result) {
+    var scores = [
+      getDimensionScore(result.dimensions, "numberSense"),
+      getDimensionScore(result.dimensions, "calculation"),
+      getDimensionScore(result.dimensions, "geometry"),
+      getDimensionScore(result.dimensions, "application"),
+    ];
+    var labels = ["数感", "计算", "图形", "逻辑"];
+    var points = "";
+    var labelHtml = "";
+    var center = 50;
+    var radius = 34;
+    var angles = [-90, 0, 90, 180];
+    var i;
+    var angle;
+    var r;
+    var x;
+    var y;
+    for (i = 0; i < scores.length; i += 1) {
+      angle = (Math.PI / 180) * angles[i];
+      r = radius * scores[i] / 100;
+      x = center + Math.cos(angle) * r;
+      y = center + Math.sin(angle) * r;
+      points += x + "," + y + " ";
+    }
+    for (i = 0; i < labels.length; i += 1) labelHtml += '<span>' + labels[i] + '</span>';
+    return '<div class="radar-card"><svg viewBox="0 0 100 100" aria-label="能力雷达图"><polygon points="50,16 84,50 50,84 16,50" class="radar-grid"></polygon><line x1="50" y1="16" x2="50" y2="84"></line><line x1="16" y1="50" x2="84" y2="50"></line><polygon points="' + points + '" class="radar-area"></polygon></svg><div class="radar-labels">' + labelHtml + "</div></div>";
+  }
+
   function renderResult() {
     var result = state.result;
+    var grade = getDisplayGrade(result.score);
     var mistakes = filterAnswers(state.answers, function (answer) {
       return !answer.correct;
     });
     var html =
-      '<section class="result-layout"><div class="topbar"><div class="brand"><span class="brand-mark">果</span><span>测评结果</span></div><div class="actions"><button class="secondary" data-action="restart">再测一次</button><button class="primary" data-action="copy">复制结果文案</button></div></div><div class="result-hero"><article class="result-card"><p class="pill">普通公立小学一年级衔接参考</p><h1 class="level">' +
+      '<section class="result-layout page-fade"><div class="topbar"><div class="brand"><span class="brand-mark">果</span><span>完整测评报告</span></div><button class="secondary" data-action="restart">再测一次</button></div><div class="result-hero"><article class="result-card result-summary"><div class="grade-badge"><strong>' +
+      grade.mark +
+      '</strong><span>' +
+      grade.text +
+      '</span></div><p class="pill">孩子等级</p><h1 class="level">' +
       result.level.name +
       '</h1><p class="lead">' +
       result.level.summary +
-      '</p><div class="score-row"><div class="stat"><strong>' +
+      '</p><div class="score-row"><div class="stat score-stat"><strong>' +
       result.score +
       '</strong><span>综合分</span></div><div class="stat"><strong>' +
       Math.round(result.accuracy * 100) +
@@ -1034,13 +1267,17 @@
       Math.round(result.speedScore * 100) +
       '%</strong><span>速度</span></div><div class="stat"><strong>' +
       formatTime(result.totalSeconds) +
-      '</strong><span>用时</span></div></div><div><div class="qr">QR</div><p class="small">分享到家长群，邀请更多孩子一起测一测。</p></div></div></aside></div><div class="report-grid"><div class="mini-card"><h3>能力画像</h3><div class="dimension-list">' +
-      renderDimensions(result.dimensions) +
+      '</strong><span>用时</span></div></div><div><div class="qr">QR</div><p class="small">分享到家长群，邀请更多孩子一起测一测。</p></div></div></aside></div><div class="report-grid"><div class="mini-card ability-section"><h3>能力雷达图</h3>' +
+      renderAbilityRadar(result) +
+      '<div class="ability-grid">' +
+      renderAbilityCards(result) +
       '</div></div><div class="mini-card"><h3>为什么是这个等级</h3><p>' +
       result.advice.reason +
-      '</p><p class="small">一年级上册是主要评分依据，下册题只用于识别超前表现。</p></div><div class="mini-card"><h3>孩子的优势</h3><ul>' +
+      '</p><p class="small">一年级上册是主要评分依据，下册题只用于识别超前表现。</p></div><div class="mini-card"><h3>优势</h3><ul>' +
       renderList(result.advice.strengths) +
-      '</ul></div><div class="mini-card"><h3>暑假怎么练</h3><ul>' +
+      '</ul></div><div class="mini-card"><h3>需要加强</h3><p>' +
+      (result.weakDimensions.length ? result.weakDimensions.join("、") : "暂未发现明显短板，可以继续保持稳定练习。") +
+      '</p></div><div class="mini-card"><h3>家庭建议</h3><ul>' +
       renderList(result.advice.nextSteps) +
       '</ul></div><div class="mini-card"><h3>用时观察</h3><p>' +
       (result.slowTypes.length ? "相对偏慢的题型：" + result.slowTypes.join("、") + "。" : "整体速度表现比较均衡，没有特别突出的慢项。") +
@@ -1050,7 +1287,9 @@
       (result.advancedAccuracy >= 0.6 ? "可以适当接触一年级下册基础内容。" : "目前先巩固一年级上册核心内容更合适。") +
       '</p></div><div class="mini-card review-card"><h3>错题复盘</h3>' +
       (mistakes.length ? '<div class="mistake-list">' + renderMistakes(mistakes) + "</div>" : "<p>这次没有错题，基础状态很漂亮。可以重点观察速度和表达是否稳定。</p>") +
-      "</div></div></section>";
+      '</div><div class="result-actions"><button class="primary hero-button" data-action="poster">生成分享海报</button><button class="secondary" data-action="copy">复制结果文案</button></div>' +
+      (state.posterVisible ? '<div class="poster-mobile"><div class="poster-inner"><div><div class="poster-title">小学数学入学准备测评</div><div class="poster-level">' + result.level.name + '</div><p class="small">' + result.level.summary + '</p></div><div class="stat-grid"><div class="stat"><strong>' + result.score + '</strong><span>综合分</span></div><div class="stat"><strong>' + Math.round(result.accuracy * 100) + '%</strong><span>正确率</span></div></div><p class="small">可截图保存，分享给家人一起看。</p></div></div>' : "") +
+      "</div></section>";
     app.innerHTML = html;
   }
 
@@ -1096,6 +1335,8 @@
       if (state.screen === "practice") renderPractice();
       if (state.screen === "standards") renderStandards();
       if (state.screen === "test") renderTest();
+      if (state.screen === "analyzing") renderAnalyzing();
+      if (state.screen === "unlock") renderUnlock();
       if (state.screen === "result") renderResult();
     } catch (error) {
       app.innerHTML = '<section class="result-card"><h1 class="level">页面加载遇到问题</h1><p class="lead">请刷新页面再试。如果在微信里打开仍然白屏，可以先用 Safari 打开测试。</p></section>';
@@ -1124,6 +1365,14 @@
     if (answerNode) {
       state.selectedAnswer = answerNode.getAttribute("data-answer");
       render();
+      if (state.screen === "test" && state.questions[state.index] && state.questions[state.index].input !== "number") {
+        try {
+          clearTimeout(state.autoAdvanceTimer);
+        } catch (error) {}
+        state.autoAdvanceTimer = window.setTimeout(function () {
+          answerCurrent();
+        }, 120);
+      }
       return;
     }
     if (!actionNode) return;
@@ -1146,15 +1395,31 @@
     if (action === "restart") {
       safeCancelSpeech();
       stopTicker();
+      clearFlowTimers();
+      state.result = null;
+      state.answers = [];
+      state.unlockOverlay = false;
+      state.posterVisible = false;
+      clearStoredAssessment();
       state.screen = "home";
       render();
     }
+    if (action === "share-unlock") {
+      if (!isWeChatBrowser()) copyText(SHARE_CONFIG.title + "\n" + SHARE_CONFIG.desc + "\n" + getPublicShareUrl());
+      state.unlockOverlay = true;
+      render();
+    }
+    if (action === "confirm-unlock") unlockResult();
     if (action === "skip") {
       state.selectedAnswer = "（跳过）";
       answerCurrent();
     }
     if (action === "prev") goPreviousQuestion();
     if (action === "next") answerCurrent();
+    if (action === "poster") {
+      state.posterVisible = true;
+      render();
+    }
     if (action === "copy") copyResult();
   }
 
@@ -1178,6 +1443,7 @@
     app.addEventListener("click", handleClick, false);
     app.addEventListener("input", handleInput, false);
     document.addEventListener("keydown", handleKeydown, false);
+    restoreUnlockedAssessment();
     render();
     initWeChatShare();
   } catch (error) {
