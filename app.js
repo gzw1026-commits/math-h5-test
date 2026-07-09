@@ -481,7 +481,12 @@
   var makers = {
     count: function () {
       var count = rand(8, 16);
-      return makeQuestion("count", "foundation", "数一数，一共有几个圆点？", count, uniqueOptions(count, 1, 20), makeDots(count));
+      var form = sample([1, 2, 3]);
+      var hidden;
+      if (form === 1) return makeQuestion("count", "foundation", "数一数，一共有几个圆点？", count, uniqueOptions(count, 1, 20), makeDots(count));
+      if (form === 2) return makeQuestion("count", "foundation", "这些圆点表示数字几？", count, uniqueOptions(count, 1, 20), makeDots(count));
+      hidden = rand(1, 4);
+      return makeQuestion("count", "foundation", "这些圆点再添 " + hidden + " 个，就是几？", count + hidden, uniqueOptions(count + hidden, 1, 20), makeDots(count));
     },
     compare: function () {
       var a = rand(5, 20);
@@ -489,35 +494,59 @@
       var c = rand(5, 20);
       var answer;
       var guard = 0;
+      var form = sample([1, 2, 3]);
       if (a === b) b += 1;
       if (b > 20) b = 5;
       while ((c === a || c === b) && guard < 30) {
         c = rand(5, 20);
         guard += 1;
       }
-      answer = Math.max(a, b, c);
-      return makeQuestion("compare", "foundation", "这三个数中，哪个数最大？", answer, shuffle([a, b, c]), makeNumberLine([a, b, c]));
+      if (form === 1) {
+        answer = Math.max(a, b, c);
+        return makeQuestion("compare", "foundation", "这三个数中，哪个数最大？", answer, shuffle([a, b, c]), makeNumberLine([a, b, c]));
+      }
+      if (form === 2) {
+        answer = Math.min(a, b, c);
+        return makeQuestion("compare", "foundation", "这三个数中，哪个数最小？", answer, shuffle([a, b, c]), makeNumberLine([a, b, c]));
+      }
+      answer = b > a ? ">" : b < a ? "<" : "=";
+      return makeQuestion("compare", "foundation", b + " 和 " + a + " 中间应该填什么？", answer, [">", "<", "="], makeNumberLine([b, "?", a]));
     },
     decompose: function () {
       var total = rand(6, 10);
       var known = rand(2, total - 2);
       var answer = total - known;
-      return makeQuestion("decompose", "foundation", total + " 可以分成 " + known + " 和几？", answer, uniqueOptions(answer, 0, 10), makeNumberLine([known, "?", total]));
+      var form = sample([1, 2, 3, 4]);
+      if (form === 1) return makeQuestion("decompose", "foundation", total + " 可以分成 " + known + " 和几？", answer, uniqueOptions(answer, 0, 10), makeNumberLine([known, "?", total]));
+      if (form === 2) return makeQuestion("decompose", "foundation", known + " 和几合起来是 " + total + "？", answer, uniqueOptions(answer, 0, 10), makeNumberLine([known, "?", total]));
+      if (form === 3) return makeQuestion("decompose", "foundation", total + " 去掉 " + known + "，还剩几？", answer, uniqueOptions(answer, 0, 10));
+      return makeQuestion("decompose", "foundation", "想一想，哪一组能组成 " + total + "？", known + "和" + answer, splitOptions(known, answer));
     },
     placeValue: function () {
       var ones = rand(1, 9);
       var answer = 10 + ones;
-      return makeQuestion("placeValue", "grade1", "1个十和 " + ones + " 个一合起来是几？", answer, uniqueOptions(answer, 8, 20), makeNumberLine(["1个十", ones + "个一"]));
+      var form = sample([1, 2, 3, 4]);
+      var number = rand(11, 20);
+      if (form === 1) return makeQuestion("placeValue", "grade1", "1个十和 " + ones + " 个一合起来是几？", answer, uniqueOptions(answer, 8, 20), makeNumberLine(["1个十", ones + "个一"]));
+      if (form === 2) return makeQuestion("placeValue", "grade1", number + " 里面有几个十？", 1, ["0", "1", "2", "10"], makeNumberLine([number]));
+      if (form === 3) return makeQuestion("placeValue", "grade1", number + " 里面有几个一？", number - 10, uniqueOptions(number - 10, 0, 10), makeNumberLine([number]));
+      return makeQuestion("placeValue", "grade1", "比 " + (number - 1) + " 多1的数是几？", number, uniqueOptions(number, 8, 20), makeNumberLine([number - 1, "?"]));
     },
     add10: function () {
       var a = rand(2, 8);
       var b = rand(2, Math.min(7, 10 - a));
-      return makeQuestion("add10", "foundation", a + " + " + b + " = ?", a + b, uniqueOptions(a + b, 0, 12));
+      var form = sample([1, 2, 3]);
+      if (form === 1) return makeQuestion("add10", "foundation", a + " + " + b + " = ?", a + b, uniqueOptions(a + b, 0, 12));
+      if (form === 2) return makeQuestion("add10", "foundation", "左边有 " + a + " 个，右边有 " + b + " 个，一共有几个？", a + b, uniqueOptions(a + b, 0, 12), makeNumberLine([a, b]));
+      return makeQuestion("add10", "foundation", "从 " + a + " 往后数 " + b + " 个，数到几？", a + b, uniqueOptions(a + b, 0, 12), makeNumberLine([a, "+ " + b]));
     },
     subtract10: function () {
       var a = rand(4, 10);
       var b = rand(2, a - 1);
-      return makeQuestion("subtract10", "foundation", a + " - " + b + " = ?", a - b, uniqueOptions(a - b, 0, 10));
+      var form = sample([1, 2, 3]);
+      if (form === 1) return makeQuestion("subtract10", "foundation", a + " - " + b + " = ?", a - b, uniqueOptions(a - b, 0, 10));
+      if (form === 2) return makeQuestion("subtract10", "foundation", "有 " + a + " 个圆点，拿走 " + b + " 个，还剩几个？", a - b, uniqueOptions(a - b, 0, 10), makeDots(a));
+      return makeQuestion("subtract10", "foundation", "从 " + a + " 往前数 " + b + " 个，数到几？", a - b, uniqueOptions(a - b, 0, 10), makeNumberLine([a, "- " + b]));
     },
     teenSense: function () {
       var start = rand(10, 16);
@@ -525,13 +554,20 @@
       var numbers = [start, start + 1, start + 2, start + 3, start + 4];
       var answer = numbers[missingIndex];
       var display = numbers.slice();
+      var form = sample([1, 2, 3, 4]);
       display[missingIndex] = "?";
-      return makeQuestion("teenSense", "grade1", "找一找，问号应该是哪个数？", answer, uniqueOptions(answer, 8, 22), makeNumberLine(display));
+      if (form === 1) return makeQuestion("teenSense", "grade1", "找一找，问号应该是哪个数？", answer, uniqueOptions(answer, 8, 22), makeNumberLine(display));
+      if (form === 2) return makeQuestion("teenSense", "grade1", answer + " 前面的一个数是几？", answer - 1, uniqueOptions(answer - 1, 8, 22), makeNumberLine(["?", answer]));
+      if (form === 3) return makeQuestion("teenSense", "grade1", answer + " 后面的一个数是几？", answer + 1, uniqueOptions(answer + 1, 8, 22), makeNumberLine([answer, "?"]));
+      return makeQuestion("teenSense", "grade1", "从小到大排，" + answer + " 应该在谁的后面？", answer - 1, uniqueOptions(answer - 1, 8, 22), makeNumberLine([answer - 2, "?", answer]));
     },
     add20: function () {
       var a = rand(6, 13);
       var b = rand(2, Math.min(6, 20 - a));
-      return makeQuestion("add20", "grade1", a + " + " + b + " = ?", a + b, [], "", "number");
+      var form = sample([1, 2, 3]);
+      if (form === 1) return makeQuestion("add20", "grade1", a + " + " + b + " = ?", a + b, [], "", "number");
+      if (form === 2) return makeQuestion("add20", "grade1", a + " 再添 " + b + "，一共是几？", a + b, [], "", "number");
+      return makeQuestion("add20", "grade1", "从 " + a + " 开始往后数 " + b + " 个，数到几？", a + b, [], "", "number");
     },
     makeTen: function () {
       var pair = sample([
@@ -542,15 +578,21 @@
         [9, 4],
         [6, 7],
         [7, 6],
+        [6, 8],
+        [8, 7],
+        [9, 5],
       ]);
       var a = pair[0];
       var b = pair[1];
       var need = 10 - a;
       var rest = b - need;
-      return makeQuestion("makeTen", "grade1", "看图：右边这堆点要怎么拆，才能先补满左边10格？", need + "和" + rest, splitOptions(need, rest), makeTenFrame(a, b));
+      var form = sample([1, 2, 3]);
+      if (form === 1) return makeQuestion("makeTen", "grade1", "看图：右边这堆点要怎么拆，才能先补满左边10格？", need + "和" + rest, splitOptions(need, rest), makeTenFrame(a, b));
+      if (form === 2) return makeQuestion("makeTen", "grade1", "左边已有 " + a + " 个点，先从右边拿几个点能凑成10？", need, uniqueOptions(need, 0, 9), makeTenFrame(a, b));
+      return makeQuestion("makeTen", "grade1", "把右边拆成 " + need + " 和几，就能先凑成10？", rest, uniqueOptions(rest, 0, 9), makeTenFrame(a, b));
     },
     equation: function () {
-      var form = sample([1, 2, 3]);
+      var form = sample([1, 2, 3, 4, 5]);
       var a;
       var answer;
       var total;
@@ -567,17 +609,28 @@
       }
       answer = rand(4, 9);
       right = rand(7, 12);
-      return makeQuestion("equation", "application", "□ + " + (right - answer) + " = " + right + "，□里填几？", answer, [], "", "number");
+      if (form === 3) return makeQuestion("equation", "application", "□ + " + (right - answer) + " = " + right + "，□里填几？", answer, [], "", "number");
+      if (form === 4) {
+        total = rand(12, 19);
+        answer = rand(4, 9);
+        return makeQuestion("equation", "application", total + " = " + answer + " + □，□里填几？", total - answer, [], "", "number");
+      }
+      total = rand(10, 18);
+      answer = rand(2, 8);
+      return makeQuestion("equation", "application", "□ - " + answer + " = " + (total - answer) + "，□里填几？", total, [], "", "number");
     },
     expressionCompare: function () {
       var leftA = rand(6, 12);
       var leftB = rand(2, 7);
       var rightA = rand(5, 12);
       var rightB = rand(2, 7);
-      var left = leftA + leftB;
-      var right = rightA + rightB;
+      var form = sample([1, 2, 3]);
+      var left = form === 2 ? leftA - Math.min(leftB, leftA - 1) : leftA + leftB;
+      var right = form === 3 ? rightA - Math.min(rightB, rightA - 1) : rightA + rightB;
+      var leftText = form === 2 ? leftA + " - " + Math.min(leftB, leftA - 1) : leftA + " + " + leftB;
+      var rightText = form === 3 ? rightA + " - " + Math.min(rightB, rightA - 1) : rightA + " + " + rightB;
       var answer = left === right ? "一样大" : left > right ? "左边大" : "右边大";
-      return makeQuestion("expressionCompare", "application", leftA + " + " + leftB + " 和 " + rightA + " + " + rightB + "，哪边大？", answer, ["左边大", "右边大", "一样大", "不能确定"]);
+      return makeQuestion("expressionCompare", "application", leftText + " 和 " + rightText + "，哪边大？", answer, ["左边大", "右边大", "一样大", "不能确定"]);
     },
     difference: function () {
       var bigger = rand(9, 18);
@@ -587,7 +640,11 @@
         ["乐乐", "安安", "颗星"],
         ["哥哥", "妹妹", "块积木"],
       ]);
-      var prompt = names[0] + "有 " + bigger + " " + names[2] + "，" + names[1] + "有 " + smaller + " " + names[2] + "。" + names[0] + "比" + names[1] + "多几个？";
+      var form = sample([1, 2, 3]);
+      var prompt = names[0] + "有 " + bigger + " " + names[2] + "，" + names[1] + "有 " + smaller + " " + names[2] + "。";
+      if (form === 1) prompt += names[0] + "比" + names[1] + "多几个？";
+      if (form === 2) prompt += names[1] + "比" + names[0] + "少几个？";
+      if (form === 3) prompt += names[1] + "还要几个，才能和" + names[0] + "一样多？";
       return makeQuestion("difference", "application", prompt, bigger - smaller, uniqueOptions(bigger - smaller, 1, 16));
     },
     solidShape: function () {
@@ -600,18 +657,25 @@
         { seq: ["●", "▲", "■", "★", "◆"], answer: 4, target: "★" },
         { seq: ["圆", "正", "三", "长", "圆"], answer: 2, target: "正" },
         { seq: ["1", "3", "5", "7", "9"], answer: 3, target: "5" },
+        { seq: ["小", "中", "大", "高", "低"], answer: 1, target: "小" },
+        { seq: ["红", "蓝", "绿", "黄", "紫"], answer: 5, target: "紫" },
       ];
       var row = sample(rows);
-      return makeQuestion("position", "foundation", "从左往右数，" + row.target + " 排第几？", row.answer, ["1", "2", "3", "4", "5"], makeSymbolRow(row.seq));
+      var form = sample([1, 2]);
+      if (form === 1) return makeQuestion("position", "foundation", "从左往右数，" + row.target + " 排第几？", row.answer, ["1", "2", "3", "4", "5"], makeSymbolRow(row.seq));
+      return makeQuestion("position", "foundation", "从右往左数，" + row.target + " 排第几？", 6 - row.answer, ["1", "2", "3", "4", "5"], makeSymbolRow(row.seq));
     },
     pattern: function () {
       var patterns = [
         { seq: ["●", "▲", "●", "▲", "●", "?"], answer: "▲", options: ["▲", "●", "■", "5"] },
+        { seq: ["■", "■", "▲", "■", "■", "?"], answer: "▲", options: ["▲", "●", "■", "◆"] },
         { seq: [2, 4, 6, 8, "?"], answer: 10, options: [9, 10, 11, 12] },
         { seq: [5, 7, 9, 11, "?"], answer: 13, options: [12, 13, 14, 15] },
         { seq: [3, 6, 9, 12, "?"], answer: 15, options: [13, 14, 15, 16] },
         { seq: [16, 14, 12, 10, "?"], answer: 8, options: [6, 8, 9, 12] },
+        { seq: [20, 18, 16, 14, "?"], answer: 12, options: [10, 11, 12, 13] },
         { seq: ["红", "黄", "黄", "红", "黄", "黄", "?"], answer: "红", options: ["红", "黄", "蓝", "绿"] },
+        { seq: ["大", "小", "小", "大", "小", "小", "?"], answer: "大", options: ["大", "小", "中", "高"] },
       ];
       var p = sample(patterns);
       return makeQuestion("pattern", "application", "看规律，问号应该是什么？", p.answer, p.options, makeNumberLine(p.seq));
@@ -622,17 +686,38 @@
         { prompt: "三个人排队，小明不在第一个，也不在最后一个。小明排第几？", answer: 2, options: ["1", "2", "3", "不能确定"] },
         { prompt: "一个数比10大，比13小，而且不是12。这个数是几？", answer: 11, options: ["10", "11", "12", "13"] },
         { prompt: "盒子里有红球和蓝球共9个，红球有4个，蓝球有几个？", answer: 5, options: uniqueOptions(5, 1, 9) },
+        { prompt: "小华前面有3人，后面有4人，这一排一共有几人？", answer: 8, options: uniqueOptions(8, 4, 12) },
+        { prompt: "一个数比15小，比12大，而且不是14。这个数是几？", answer: 13, options: ["12", "13", "14", "15"] },
+        { prompt: "小猫、小狗、小兔排队。小狗在小猫后面，小兔在小狗后面。谁排最后？", answer: "小兔", options: ["小猫", "小狗", "小兔", "不能确定"] },
+        { prompt: "书包里有铅笔和橡皮共8个，橡皮有3个，铅笔有几个？", answer: 5, options: uniqueOptions(5, 1, 9) },
       ];
       var item = sample(items);
       return makeQuestion("logic", "application", item.prompt, item.answer, item.options);
     },
     story: function () {
+      var form = sample([1, 2, 3, 4, 5]);
       var a = rand(5, 12);
       var b = rand(2, 6);
-      var add = Math.random() > 0.45;
+      var c = rand(2, 5);
       var used = Math.min(b, a - 1);
-      var answer = add ? a + b : a - used;
-      var prompt = add ? "小明有 " + a + " 颗糖，妈妈又给了 " + b + " 颗。现在一共有几颗？" : "小明有 " + a + " 颗糖，吃掉 " + used + " 颗。还剩几颗？";
+      var answer;
+      var prompt;
+      if (form === 1) {
+        answer = a + b;
+        prompt = "小明有 " + a + " 颗糖，妈妈又给了 " + b + " 颗。现在一共有几颗？";
+      } else if (form === 2) {
+        answer = a - used;
+        prompt = "小明有 " + a + " 颗糖，吃掉 " + used + " 颗。还剩几颗？";
+      } else if (form === 3) {
+        answer = a + b - c;
+        prompt = "篮子里有 " + a + " 个苹果，又放进 " + b + " 个，拿走 " + c + " 个。现在有几个？";
+      } else if (form === 4) {
+        answer = a - b + c;
+        prompt = "盒子里有 " + a + " 块积木，拿走 " + b + " 块，又放回 " + c + " 块。现在有几块？";
+      } else {
+        answer = a + b;
+        prompt = "第一组有 " + a + " 人，第二组有 " + b + " 人，两组一共有几人？";
+      }
       return makeQuestion("story", "application", prompt, answer, uniqueOptions(answer, 0, 20));
     },
     borrowSub: function () {
@@ -642,17 +727,31 @@
         [15, 7],
         [16, 9],
         [12, 6],
+        [11, 4],
+        [17, 8],
+        [18, 9],
+        [15, 6],
+        [13, 7],
       ]);
-      return makeQuestion("borrowSub", "advanced", pair[0] + " - " + pair[1] + " = ?", pair[0] - pair[1], [], "", "number");
+      var form = sample([1, 2]);
+      if (form === 1) return makeQuestion("borrowSub", "advanced", pair[0] + " - " + pair[1] + " = ?", pair[0] - pair[1], [], "", "number");
+      return makeQuestion("borrowSub", "advanced", pair[0] + " 个里面拿走 " + pair[1] + " 个，还剩几个？", pair[0] - pair[1], [], "", "number");
     },
     hundredSense: function () {
       var a = rand(28, 96);
-      return makeQuestion("hundredSense", "advanced", a + " 后面的一个数是几？", a + 1, uniqueOptions(a + 1, 20, 100));
+      var form = sample([1, 2, 3, 4]);
+      if (form === 1) return makeQuestion("hundredSense", "advanced", a + " 后面的一个数是几？", a + 1, uniqueOptions(a + 1, 20, 100));
+      if (form === 2) return makeQuestion("hundredSense", "advanced", a + " 前面的一个数是几？", a - 1, uniqueOptions(a - 1, 20, 100));
+      if (form === 3) return makeQuestion("hundredSense", "advanced", "比 " + a + " 多10的数是几？", a + 10, uniqueOptions(a + 10, 20, 110));
+      return makeQuestion("hundredSense", "advanced", "十位上是 " + Math.floor(a / 10) + "，个位上是 " + (a % 10) + "，这个数是几？", a, uniqueOptions(a, 20, 100));
     },
     planeShape: function () {
       var options = ["圆形", "三角形", "正方形", "长方形"];
       var answer = sample(options);
-      return makeQuestion("planeShape", "advanced", "这个平面图形叫什么？", answer, shuffle(options), planeShapeSvg(answer));
+      var form = sample([1, 2, 3]);
+      if (form === 1) return makeQuestion("planeShape", "advanced", "这个平面图形叫什么？", answer, shuffle(options), planeShapeSvg(answer));
+      if (form === 2) return makeQuestion("planeShape", "advanced", "哪种图形有4条一样长的边？", "正方形", shuffle(options), planeShapeSvg("正方形"));
+      return makeQuestion("planeShape", "advanced", "哪种图形没有角？", "圆形", shuffle(options), planeShapeSvg("圆形"));
     },
   };
 
@@ -667,7 +766,7 @@
   }
 
   function startPractice() {
-    state.practiceQuestion = makers.count();
+    state.practiceQuestion = makers[sample(["count", "compare", "decompose", "add10", "subtract10", "teenSense", "pattern", "position"])]();
     state.practiceAnswer = "";
     state.practiceChecked = false;
     state.screen = "practice";
