@@ -240,21 +240,36 @@
         form.addEventListener("submit", function (event) {
           event.preventDefault();
           message.innerHTML = "";
+          var password = String(passwordInput.value || "").replace(/^\s+|\s+$/g, "");
           fetch("/.netlify/functions/stats", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password: passwordInput.value || "" }),
+            body: JSON.stringify({ password: password, adminPassword: password }),
           })
             .then(function (response) {
-              if (!response.ok) throw new Error("password");
-              return response.json();
+              return response.json().then(function (result) {
+                result.httpStatus = response.status;
+                return result;
+              });
             })
             .then(function (result) {
-              if (!result || !result.ok) throw new Error("data");
+              if (!result || !result.ok) throw result || {};
               renderDashboard(result.data);
             })
-            .catch(function () {
-              message.innerHTML = "密码不正确，或统计服务暂时不可用。";
+            .catch(function (error) {
+              if (error && error.httpStatus === 401) {
+                message.innerHTML = "密码不正确，请检查 Netlify 里的 ADMIN_PASSWORD。";
+                return;
+              }
+              if (error && error.error === "missing_env") {
+                message.innerHTML = "统计服务缺少环境变量，请检查 Netlify 的 SUPABASE_URL、SUPABASE_SERVICE_ROLE_KEY、ADMIN_PASSWORD。";
+                return;
+              }
+              if (error && error.error === "supabase_request_failed") {
+                message.innerHTML = "统计服务已通过密码验证，但读取 Supabase 失败，请检查 Supabase 地址、Service Role Key 和 events 表。";
+                return;
+              }
+              message.innerHTML = "统计服务暂时不可用，请稍后再试。";
             });
         });
       })();

@@ -11,6 +11,10 @@ function json(statusCode, body) {
   };
 }
 
+function fail(statusCode, errorCode) {
+  return json(statusCode, { ok: false, error: errorCode || "request_failed" });
+}
+
 function getHeader(headers, name) {
   var key;
   var lower = String(name).toLowerCase();
@@ -79,6 +83,37 @@ function countArray(map) {
   return out;
 }
 
+function parseRequestBody(event) {
+  var contentType = getHeader(event.headers, "content-type").toLowerCase();
+  var body = event.body || "";
+  var parts;
+  var item;
+  var pair;
+  var data = {};
+  var i;
+
+  if (contentType.indexOf("application/json") !== -1) {
+    return JSON.parse(body || "{}");
+  }
+
+  if (contentType.indexOf("application/x-www-form-urlencoded") !== -1) {
+    parts = body.split("&");
+    for (i = 0; i < parts.length; i += 1) {
+      item = parts[i];
+      if (!item) continue;
+      pair = item.split("=");
+      data[decodeURIComponent(pair[0] || "")] = decodeURIComponent((pair[1] || "").replace(/\+/g, " "));
+    }
+    return data;
+  }
+
+  return null;
+}
+
+function normalizePassword(value) {
+  return String(value || "").replace(/^\s+|\s+$/g, "");
+}
+
 function buildStats(rows) {
   var pageSessions = {};
   var startedAssessments = {};
@@ -138,30 +173,31 @@ function buildStats(rows) {
 }
 
 exports.handler = async function (event) {
-  var contentType;
   var data;
+  var submittedPassword;
   var supabaseUrl;
   var serviceKey;
   var adminPassword;
   var response;
   var rows;
 
-  if (event.httpMethod !== "POST") return json(405, { ok: false });
-  contentType = getHeader(event.headers, "content-type");
-  if (contentType.toLowerCase().indexOf("application/json") === -1) return json(415, { ok: false });
+  if (event.httpMethod === "OPTIONS") return json(200, { ok: true });
+  if (event.httpMethod !== "POST") return fail(405, "method_not_allowed");
 
   try {
-    data = JSON.parse(event.body || "{}");
+    data = parseRequestBody(event);
   } catch (error) {
-    return json(400, { ok: false });
+    return fail(400, "invalid_body");
   }
+  if (!data) return fail(415, "unsupported_content_type");
 
-  adminPassword = process.env.ADMIN_PASSWORD;
-  if (!adminPassword || !data || data.password !== adminPassword) return json(401, { ok: false });
+  adminPassword = normalizePassword(process.env.ADMIN_PASSWORD);
+  submittedPassword = normalizePassword(data.password || data.adminPassword);
+  if (!adminPassword || !submittedPassword || submittedPassword !== adminPassword) return fail(401, "unauthorized");
 
   supabaseUrl = process.env.SUPABASE_URL;
   serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) return json(500, { ok: false });
+  if (!supabaseUrl || !serviceKey) return fail(500, "missing_env");
 
   try {
     response = await fetch(String(supabaseUrl).replace(/\/$/, "") + "/rest/v1/events?select=event_name,session_id,assessment_id,payload,created_at&order=created_at.desc&limit=10000", {
@@ -172,10 +208,10 @@ exports.handler = async function (event) {
         Accept: "application/json",
       },
     });
-    if (!response.ok) return json(500, { ok: false });
+    if (!response.ok) return fail(500, "supabase_request_failed");
     rows = await response.json();
     return json(200, { ok: true, data: buildStats(rows) });
   } catch (error2) {
-    return json(500, { ok: false });
+    return fail(500, "supabase_request_failed");
   }
 };
