@@ -14,6 +14,8 @@
 
   var STORAGE_RESULT_KEY = "math-readiness-last-result";
   var STORAGE_UNLOCK_KEY = "math-readiness-result-unlocked";
+  var STORAGE_VISITOR_KEY = "math-readiness-visitor-id";
+  var TRACKING_ENDPOINT = "/.netlify/functions/track";
 
   var DIMENSIONS = {
     numberSense: "数感与数量",
@@ -59,6 +61,8 @@
     now: new Date().getTime(),
     result: null,
     unlockOverlay: false,
+    posterImageUrl: "",
+    posterPreviewOpen: false,
     toastMessage: "",
     toastTimer: null,
     autoAdvanceTimer: null,
@@ -68,6 +72,9 @@
     practiceAnswer: "",
     practiceChecked: false,
     autoRead: true,
+    visitorId: "",
+    sessionId: "",
+    assessmentId: "",
   };
 
   function rand(min, max) {
@@ -358,6 +365,83 @@
   function safeStorageRemove(key) {
     try {
       if (window.localStorage) window.localStorage.removeItem(key);
+    } catch (error) {}
+  }
+
+  function makeTrackingId(prefix) {
+    var randomPart = "";
+    var values;
+    var i;
+    try {
+      if (window.crypto && window.crypto.getRandomValues) {
+        values = new Uint32Array(2);
+        window.crypto.getRandomValues(values);
+        for (i = 0; i < values.length; i += 1) randomPart += values[i].toString(16);
+      }
+    } catch (error) {
+      randomPart = "";
+    }
+    if (!randomPart) randomPart = Math.floor(Math.random() * 1000000000000).toString(16);
+    return prefix + "_" + new Date().getTime().toString(16) + "_" + randomPart;
+  }
+
+  function getVisitorId() {
+    var id = safeStorageGet(STORAGE_VISITOR_KEY);
+    if (id && id.length >= 8) return id;
+    id = makeTrackingId("v");
+    safeStorageSet(STORAGE_VISITOR_KEY, id);
+    return id;
+  }
+
+  function resetAssessmentTrackingIds() {
+    state.sessionId = makeTrackingId("s");
+    state.assessmentId = makeTrackingId("a");
+  }
+
+  function initTrackingIds() {
+    state.visitorId = getVisitorId();
+    if (!state.sessionId || !state.assessmentId) resetAssessmentTrackingIds();
+  }
+
+  function postTrackingJson(body) {
+    var text;
+    try {
+      text = JSON.stringify(body);
+    } catch (error) {
+      return;
+    }
+    try {
+      if (window.fetch) {
+        window
+          .fetch(TRACKING_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: text,
+            keepalive: true,
+          })
+          .catch(function () {});
+        return;
+      }
+    } catch (error2) {}
+    try {
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", TRACKING_ENDPOINT, true);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.send(text);
+    } catch (error3) {}
+  }
+
+  function trackEvent(eventName, payload) {
+    try {
+      if (!state.visitorId) state.visitorId = getVisitorId();
+      if (!state.sessionId || !state.assessmentId) resetAssessmentTrackingIds();
+      postTrackingJson({
+        event_name: eventName,
+        visitor_id: state.visitorId,
+        session_id: state.sessionId,
+        assessment_id: state.assessmentId,
+        payload: payload || {},
+      });
     } catch (error) {}
   }
 
@@ -913,6 +997,7 @@
     safeCancelSpeech();
     clearFlowTimers();
     clearStoredAssessment();
+    resetAssessmentTrackingIds();
     state.mode = "assessment";
     state.questions = generateQuestions();
     state.index = 0;
@@ -925,6 +1010,7 @@
     state.screen = "test";
     state.now = new Date().getTime();
     startTicker();
+    trackEvent("start_test", {});
     renderAndMaybeSpeak(true);
   }
 
@@ -1000,16 +1086,28 @@
     var question = state.questions[state.index];
     var rawAnswer = String(state.selectedAnswer).replace(/^\s+|\s+$/g, "");
     var usedSeconds;
+    var durationMs;
+    var isCorrect;
     if (!rawAnswer) return;
+    durationMs = Math.max(0, new Date().getTime() - state.questionStartedAt);
     usedSeconds = elapsedSeconds(state.questionStartedAt);
+    isCorrect = rawAnswer === question.answer;
     state.answers = state.answers.slice(0, state.index);
     state.answers.push({
       question: question,
       answer: rawAnswer,
-      correct: rawAnswer === question.answer,
+      correct: isCorrect,
       usedSeconds: usedSeconds,
       speedRatio: usedSeconds / question.referenceSeconds,
     });
+    if (state.mode === "assessment") {
+      trackEvent("question_answered", {
+        question_id: question.id,
+        question_category: question.type,
+        is_correct: isCorrect,
+        duration_ms: durationMs,
+      });
+    }
     state.selectedAnswer = "";
     if (state.index >= state.questions.length - 1) {
       finishTest();
@@ -1042,19 +1140,32 @@
       return;
     }
     state.result = calculateResult(state.answers);
+    trackEvent("finish_test", {
+      duration_ms: Math.max(0, new Date().getTime() - state.startedAt),
+      total_questions: state.answers.length,
+      correct_count: countCorrect(state.answers),
+    });
+    trackEvent("result_level", {
+      level: state.result.level.name,
+      score: state.result.score,
+    });
     state.unlockOverlay = false;
+    state.posterImageUrl = "";
+    state.posterPreviewOpen = false;
     state.posterVisible = false;
     persistAssessment(false);
     state.screen = "analyzing";
     render();
     state.analysisTimer = window.setTimeout(function () {
-      state.screen = "unlock";
+      state.screen = "sharePoster";
       render();
     }, 1500);
   }
 
   function unlockResult() {
     state.unlockOverlay = false;
+    state.posterPreviewOpen = false;
+    trackEvent("unlock_result", {});
     persistAssessment(true);
     state.screen = "result";
     render();
@@ -1406,6 +1517,189 @@
       '<section class="complete-layout page-fade"><article class="complete-card"><div class="complete-burst">🎉</div><h1>恭喜！</h1><p class="lead">孩子已经完成全部20道题！</p><div class="analysis-box"><div class="analysis-spinner"></div><strong>AI正在分析孩子数学能力...</strong><span>正在生成能力画像、优势和家庭建议</span></div></article></section>';
   }
 
+  function getHomeShareUrl() {
+    var url = getPublicShareUrl();
+    try {
+      return url.split("?")[0].split("#")[0];
+    } catch (error) {
+      return url;
+    }
+  }
+
+  function getQrImageUrl(size) {
+    return "https://api.qrserver.com/v1/create-qr-code/?size=" + size + "x" + size + "&margin=12&data=" + encodeURIComponent(getHomeShareUrl());
+  }
+
+  function renderPosterPreviewCard() {
+    return (
+      '<div class="share-poster-card"><div class="poster-free">免费测评</div><h2>小学数学入学准备测评</h2><p class="poster-line">20道题｜约5分钟</p><p class="poster-copy">测一测孩子能不能顺利衔接一年级数学</p><div class="poster-qr"><img src="' +
+      getQrImageUrl(220) +
+      '" alt="扫码免费测评二维码"></div><strong>扫码免费测评</strong></div>'
+    );
+  }
+
+  function renderSharePoster() {
+    var saveButton = isWeChatBrowser() ? "" : '<a class="secondary save-poster-button" href="' + escapeHtml(state.posterImageUrl) + '" download="小学数学入学准备测评海报.png">保存图片</a>';
+    var overlay = state.posterPreviewOpen && state.posterImageUrl
+      ? '<div class="poster-preview-mask"><div class="poster-preview-panel"><p>' +
+        (isWeChatBrowser() ? "长按图片保存，发送给家人或家长群。" : "可保存图片后发送给家人或家长群。") +
+        '</p><img src="' +
+        escapeHtml(state.posterImageUrl) +
+        '" alt="分享海报大图">' +
+        saveButton +
+        '<button class="text-button" data-action="close-poster-preview">关闭预览</button></div></div>'
+      : "";
+    app.innerHTML =
+      '<section class="share-poster-layout page-fade"><div class="share-poster-head"><h1>测评已完成</h1><p>孩子的完整测评报告已经生成</p></div>' +
+      renderPosterPreviewCard() +
+      '<p class="share-poster-tip">长按保存图片，发送给家人或家长群，其他家长扫码即可免费测评</p><div class="share-poster-actions"><button class="primary hero-button" data-action="generate-share-poster">生成分享海报</button><button class="secondary" data-action="confirm-unlock">我已分享，查看结果</button></div>' +
+      overlay +
+      "</section>";
+  }
+
+  function drawRoundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight) {
+    var words = String(text).split("");
+    var line = "";
+    var i;
+    for (i = 0; i < words.length; i += 1) {
+      if (ctx.measureText(line + words[i]).width > maxWidth && line) {
+        ctx.fillText(line, x, y);
+        line = words[i];
+        y += lineHeight;
+      } else {
+        line += words[i];
+      }
+    }
+    if (line) ctx.fillText(line, x, y);
+    return y;
+  }
+
+  function drawFallbackQr(ctx, x, y, size) {
+    var cells = 29;
+    var cell = size / cells;
+    var i;
+    var j;
+    var value;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(x, y, size, size);
+    ctx.fillStyle = "#182032";
+    function finder(px, py) {
+      ctx.fillRect(x + px * cell, y + py * cell, cell * 7, cell * 7);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x + (px + 1) * cell, y + (py + 1) * cell, cell * 5, cell * 5);
+      ctx.fillStyle = "#182032";
+      ctx.fillRect(x + (px + 2) * cell, y + (py + 2) * cell, cell * 3, cell * 3);
+    }
+    finder(1, 1);
+    finder(21, 1);
+    finder(1, 21);
+    for (i = 0; i < cells; i += 1) {
+      for (j = 0; j < cells; j += 1) {
+        if ((i < 9 && j < 9) || (i > 19 && j < 9) || (i < 9 && j > 19)) continue;
+        value = (i * 7 + j * 11 + getHomeShareUrl().length * 3) % 5;
+        if (value === 0 || value === 2) ctx.fillRect(x + i * cell, y + j * cell, Math.ceil(cell), Math.ceil(cell));
+      }
+    }
+  }
+
+  function drawSharePoster(qrImage) {
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    var gradient;
+    canvas.width = 1080;
+    canvas.height = 1440;
+    gradient = ctx.createLinearGradient(0, 0, 1080, 1440);
+    gradient.addColorStop(0, "#fff8e7");
+    gradient.addColorStop(1, "#eefbf3");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1080, 1440);
+
+    drawRoundRect(ctx, 70, 74, 940, 1240, 48);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(18, 183, 106, 0.18)";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    drawRoundRect(ctx, 110, 118, 218, 82, 41);
+    ctx.fillStyle = "#ff5a1f";
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 42px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("免费测评", 219, 172);
+
+    ctx.fillStyle = "#182032";
+    ctx.font = "900 78px sans-serif";
+    ctx.textAlign = "left";
+    drawWrappedText(ctx, "小学数学入学准备测评", 110, 330, 860, 92);
+
+    ctx.fillStyle = "#12b76a";
+    ctx.font = "900 46px sans-serif";
+    ctx.fillText("20道题｜约5分钟", 110, 510);
+
+    ctx.fillStyle = "#475467";
+    ctx.font = "700 44px sans-serif";
+    drawWrappedText(ctx, "测一测孩子能不能顺利衔接一年级数学", 110, 620, 830, 62);
+
+    drawRoundRect(ctx, 335, 760, 410, 410, 36);
+    ctx.fillStyle = "#f7fff9";
+    ctx.fill();
+    if (qrImage) ctx.drawImage(qrImage, 385, 810, 310, 310);
+    else drawFallbackQr(ctx, 385, 810, 310);
+
+    ctx.fillStyle = "#182032";
+    ctx.font = "900 46px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("扫码免费测评", 540, 1250);
+    ctx.fillStyle = "#667085";
+    ctx.font = "500 26px sans-serif";
+    ctx.fillText(getHomeShareUrl(), 540, 1304);
+    return canvas.toDataURL("image/png");
+  }
+
+  function generateSharePoster() {
+    var img;
+    trackEvent("generate_poster", {});
+    try {
+      img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = function () {
+        try {
+          state.posterImageUrl = drawSharePoster(img);
+        } catch (error) {
+          state.posterImageUrl = drawSharePoster(null);
+        }
+        state.posterPreviewOpen = true;
+        render();
+      };
+      img.onerror = function () {
+        state.posterImageUrl = drawSharePoster(null);
+        state.posterPreviewOpen = true;
+        render();
+      };
+      img.src = getQrImageUrl(360);
+    } catch (error2) {
+      state.posterImageUrl = drawSharePoster(null);
+      state.posterPreviewOpen = true;
+      render();
+    }
+  }
+
   function renderUnlock() {
     var inWechat = isWeChatBrowser();
     var buttonText = "分享后查看结果";
@@ -1618,6 +1912,7 @@
       if (state.screen === "standards") renderStandards();
       if (state.screen === "test") renderTest();
       if (state.screen === "analyzing") renderAnalyzing();
+      if (state.screen === "sharePoster") renderSharePoster();
       if (state.screen === "unlock") renderUnlock();
       if (state.screen === "result") renderResult();
       if (state.screen === "dailyResult") renderDailyResult();
@@ -1683,6 +1978,8 @@
       state.result = null;
       state.answers = [];
       state.unlockOverlay = false;
+      state.posterImageUrl = "";
+      state.posterPreviewOpen = false;
       state.posterVisible = false;
       clearStoredAssessment();
       state.screen = "home";
@@ -1691,6 +1988,11 @@
     if (action === "share-unlock") {
       if (!isWeChatBrowser()) copyText(SHARE_CONFIG.title + "\n" + SHARE_CONFIG.desc + "\n" + getPublicShareUrl());
       state.unlockOverlay = true;
+      render();
+    }
+    if (action === "generate-share-poster") generateSharePoster();
+    if (action === "close-poster-preview") {
+      state.posterPreviewOpen = false;
       render();
     }
     if (action === "confirm-unlock") unlockResult();
@@ -1727,9 +2029,11 @@
     app.addEventListener("click", handleClick, false);
     app.addEventListener("input", handleInput, false);
     document.addEventListener("keydown", handleKeydown, false);
+    initTrackingIds();
     restoreUnlockedAssessment();
     render();
     initWeChatShare();
+    trackEvent("page_view", {});
   } catch (error) {
     app.innerHTML = '<section class="result-card"><h1 class="level">页面加载遇到问题</h1><p class="lead">请刷新页面再试。</p></section>';
   }

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>测评数据后台</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: #172033;
+        background: #f7fbf7;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .wrap {
+        width: min(980px, 100%);
+        margin: 0 auto;
+        padding: 24px 16px 48px;
+      }
+      .panel,
+      .card,
+      .table-card {
+        border: 1px solid rgba(18, 183, 106, 0.14);
+        border-radius: 22px;
+        background: #fffefa;
+        box-shadow: 0 12px 30px rgba(20, 35, 28, 0.08);
+      }
+      .panel {
+        padding: 24px;
+      }
+      h1,
+      h2 {
+        margin: 0;
+      }
+      h1 {
+        font-size: 30px;
+      }
+      h2 {
+        font-size: 20px;
+      }
+      p {
+        color: #667085;
+        line-height: 1.7;
+      }
+      form {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+      }
+      input {
+        min-width: 0;
+        flex: 1;
+        border: 1px solid #d0e7db;
+        border-radius: 14px;
+        padding: 14px;
+        font-size: 16px;
+      }
+      button {
+        border: 0;
+        border-radius: 14px;
+        padding: 0 18px;
+        color: white;
+        background: linear-gradient(135deg, #12b76a, #00a86b);
+        font-size: 16px;
+        font-weight: 800;
+      }
+      .hidden {
+        display: none;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin: 18px 0;
+      }
+      .card {
+        padding: 18px;
+      }
+      .card span {
+        display: block;
+        color: #667085;
+        font-size: 13px;
+      }
+      .card strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 26px;
+      }
+      .section {
+        margin-top: 20px;
+      }
+      .table-card {
+        margin-top: 12px;
+        overflow: hidden;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      th,
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #edf2ee;
+        text-align: left;
+      }
+      th {
+        background: #effaf4;
+        color: #344054;
+      }
+      .error {
+        color: #c0372b;
+        font-weight: 700;
+      }
+      .muted {
+        color: #667085;
+      }
+      @media (max-width: 720px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        form {
+          flex-direction: column;
+        }
+        button {
+          height: 48px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section id="login" class="panel">
+        <h1>测评数据后台</h1>
+        <p>请输入后台密码后查看匿名统计数据。这里不展示姓名、手机号、微信号或地理位置。</p>
+        <form id="loginForm">
+          <input id="password" type="password" autocomplete="current-password" placeholder="后台密码" />
+          <button type="submit">查看数据</button>
+        </form>
+        <p id="loginMessage" class="error"></p>
+      </section>
+
+      <section id="dashboard" class="hidden">
+        <div class="panel">
+          <h1>匿名测评统计</h1>
+          <p class="muted">数据来自 Supabase events 表，最多读取最近 10000 条事件进行汇总。</p>
+        </div>
+        <div id="summary" class="grid"></div>
+        <div class="section">
+          <h2>等级分布</h2>
+          <div id="levels" class="table-card"></div>
+        </div>
+        <div class="section">
+          <h2>各题正确率</h2>
+          <div id="questions" class="table-card"></div>
+        </div>
+        <div class="section">
+          <h2>各题型正确率</h2>
+          <div id="categories" class="table-card"></div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        "use strict";
+
+        var form = document.getElementById("loginForm");
+        var passwordInput = document.getElementById("password");
+        var message = document.getElementById("loginMessage");
+        var login = document.getElementById("login");
+        var dashboard = document.getElementById("dashboard");
+
+        function escapeHtml(value) {
+          return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        }
+
+        function formatTime(seconds) {
+          var min = Math.floor(seconds / 60);
+          var sec = seconds % 60;
+          return min + ":" + (sec < 10 ? "0" + sec : sec);
+        }
+
+        function renderSummary(summary) {
+          var items = [
+            ["访问会话数", summary.visit_sessions],
+            ["开始测评数", summary.start_tests],
+            ["完成测评数", summary.finish_tests],
+            ["开始率", summary.start_rate + "%"],
+            ["完成率", summary.finish_rate + "%"],
+            ["海报生成率", summary.poster_rate + "%"],
+            ["结果查看率", summary.result_view_rate + "%"],
+            ["平均完成时间", formatTime(summary.average_finish_seconds)],
+          ];
+          var html = "";
+          var i;
+          for (i = 0; i < items.length; i += 1) {
+            html += '<article class="card"><span>' + items[i][0] + "</span><strong>" + items[i][1] + "</strong></article>";
+          }
+          document.getElementById("summary").innerHTML = html;
+        }
+
+        function renderCountTable(id, rows) {
+          var html = "<table><thead><tr><th>等级</th><th>次数</th></tr></thead><tbody>";
+          var i;
+          if (!rows.length) html += '<tr><td colspan="2">暂无数据</td></tr>';
+          for (i = 0; i < rows.length; i += 1) {
+            html += "<tr><td>" + escapeHtml(rows[i].name) + "</td><td>" + rows[i].count + "</td></tr>";
+          }
+          document.getElementById(id).innerHTML = html + "</tbody></table>";
+        }
+
+        function renderAccuracyTable(id, label, rows) {
+          var html = "<table><thead><tr><th>" + label + "</th><th>正确率</th><th>答对/总数</th></tr></thead><tbody>";
+          var i;
+          if (!rows.length) html += '<tr><td colspan="3">暂无数据</td></tr>';
+          for (i = 0; i < rows.length; i += 1) {
+            html += "<tr><td>" + escapeHtml(rows[i].name) + "</td><td>" + rows[i].accuracy + "%</td><td>" + rows[i].correct + "/" + rows[i].total + "</td></tr>";
+          }
+          document.getElementById(id).innerHTML = html + "</tbody></table>";
+        }
+
+        function renderDashboard(data) {
+          login.className = "hidden";
+          dashboard.className = "";
+          renderSummary(data.summary || {});
+          renderCountTable("levels", data.level_distribution || []);
+          renderAccuracyTable("questions", "题目ID", data.question_accuracy || []);
+          renderAccuracyTable("categories", "题型", data.category_accuracy || []);
+        }
+
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          message.innerHTML = "";
+          fetch("/.netlify/functions/stats", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: passwordInput.value || "" }),
+          })
+            .then(function (response) {
+              if (!response.ok) throw new Error("password");
+              return response.json();
+            })
+            .then(function (result) {
+              if (!result || !result.ok) throw new Error("data");
+              renderDashboard(result.data);
+            })
+            .catch(function () {
+              message.innerHTML = "密码不正确，或统计服务暂时不可用。";
+            });
+        });
+      })();
+    </script>
+  </body>
+</html>

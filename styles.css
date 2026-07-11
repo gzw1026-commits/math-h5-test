@@ -1000,6 +1000,149 @@ button:disabled {
   gap: 10px;
 }
 
+.share-poster-layout {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  gap: 10px;
+  padding: 2px;
+}
+
+.share-poster-head {
+  display: grid;
+  gap: 5px;
+  text-align: center;
+}
+
+.share-poster-head h1 {
+  color: var(--ink);
+  font-size: 30px;
+}
+
+.share-poster-head p {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.share-poster-card {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  min-height: 0;
+  border: 1px solid rgba(18, 183, 106, 0.16);
+  border-radius: 26px;
+  padding: 16px;
+  background: linear-gradient(160deg, #fffdf7, #f0fff6);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.poster-free {
+  border-radius: 999px;
+  padding: 7px 13px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff381f, #ff8a00);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.share-poster-card h2 {
+  color: var(--ink);
+  font-size: 25px;
+  line-height: 1.16;
+}
+
+.poster-line {
+  color: var(--leaf);
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.poster-copy {
+  max-width: 280px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.42;
+}
+
+.poster-qr {
+  display: grid;
+  width: 190px;
+  height: 190px;
+  place-items: center;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 12px 26px rgba(24, 32, 50, 0.1);
+}
+
+.poster-qr img {
+  width: 174px;
+  height: 174px;
+  display: block;
+}
+
+.share-poster-card strong {
+  color: var(--ink);
+  font-size: 17px;
+}
+
+.share-poster-tip {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.42;
+  text-align: center;
+}
+
+.share-poster-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.poster-preview-mask {
+  position: absolute;
+  inset: -10px;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(18, 26, 30, 0.78);
+}
+
+.poster-preview-panel {
+  display: grid;
+  gap: 10px;
+  width: min(360px, 94%);
+  max-height: 96%;
+  justify-items: center;
+  border-radius: 24px;
+  padding: 12px;
+  background: #fffdf7;
+}
+
+.poster-preview-panel p {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.poster-preview-panel img {
+  width: min(300px, 82vw);
+  max-height: 72vh;
+  border-radius: 18px;
+  object-fit: contain;
+  box-shadow: 0 16px 38px rgba(24, 32, 50, 0.22);
+}
+
+.save-poster-button {
+  width: 100%;
+  text-decoration: none;
+}
+
 .unlock-card {
   display: grid;
   align-content: center;
