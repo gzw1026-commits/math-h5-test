@@ -259,6 +259,16 @@ h1 {
   font-size: 18px;
 }
 
+.daily-button {
+  width: 100%;
+  min-height: 50px;
+  border: 0;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--sky), var(--violet));
+  box-shadow: 0 14px 28px rgba(46, 144, 250, 0.22);
+  font-size: 16px;
+}
+
 .home-cta {
   display: grid;
   gap: 12px;
@@ -413,7 +423,21 @@ h1 {
   overflow: hidden;
   display: grid;
   grid-template-rows: auto auto auto 1fr;
-  gap: 8px;
+  gap: 6px;
+}
+
+.test-topbar {
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: nowrap;
+}
+
+.test-topbar .ghost {
+  width: auto;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 14px;
 }
 
 .progress-wrap {
@@ -456,27 +480,28 @@ h1 {
 .timer-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  gap: 5px;
 }
 
 .timer-strip span {
   min-width: 0;
-  padding: 5px 7px;
+  padding: 5px 6px;
   border: 1px solid rgba(35, 47, 52, 0.08);
-  border-radius: 8px;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.76);
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1;
+  text-align: center;
 }
 
 .timer-strip strong {
-  display: block;
-  margin-top: 2px;
+  display: inline;
+  margin-left: 3px;
   overflow: hidden;
   color: var(--ink);
-  font-size: 17px;
+  font-size: 13px;
   font-weight: 950;
   line-height: 1;
   text-overflow: ellipsis;
@@ -488,7 +513,7 @@ h1 {
   grid-template-columns: 1fr;
   gap: 8px;
   min-height: 0;
-  align-items: start;
+  align-items: stretch;
 }
 
 .question-card {
@@ -496,10 +521,17 @@ h1 {
   min-height: 0;
   padding: 15px;
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  grid-template-rows: auto 1fr auto;
   gap: 10px;
   overflow: hidden;
   border-radius: 22px;
+}
+
+.question-center {
+  display: grid;
+  min-height: 0;
+  align-content: center;
+  gap: 12px;
 }
 
 .question-meta {
@@ -552,8 +584,8 @@ h1 {
 
 .question-visual {
   display: grid;
-  min-height: 86px;
-  max-height: 150px;
+  min-height: 0;
+  max-height: 132px;
   overflow: hidden;
   align-content: center;
   gap: 12px;
@@ -755,6 +787,11 @@ h1 {
   display: grid;
   gap: 8px;
   min-height: 0;
+}
+
+.question-bottom {
+  display: grid;
+  gap: 7px;
 }
 
 .options {
@@ -1419,4 +1456,15 @@ button:disabled {
     width: 100%;
   }
 
+}
+
+@media (max-width: 520px) {
+  .test-topbar {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .test-topbar .ghost {
+    width: auto;
+  }
 }

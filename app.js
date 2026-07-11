@@ -48,6 +48,7 @@
 
   var state = {
     screen: "home",
+    mode: "assessment",
     questions: [],
     index: 0,
     answers: [],
@@ -516,7 +517,7 @@
       var total = rand(6, 10);
       var known = rand(2, total - 2);
       var answer = total - known;
-      var form = sample([1, 2, 3, 4]);
+      var form = sample([1, 2, 3, 4, 5]);
       if (form === 1) return makeQuestion("decompose", "foundation", total + " 可以分成 " + known + " 和几？", answer, uniqueOptions(answer, 0, 10), makeNumberLine([known, "?", total]));
       if (form === 2) return makeQuestion("decompose", "foundation", known + " 和几合起来是 " + total + "？", answer, uniqueOptions(answer, 0, 10), makeNumberLine([known, "?", total]));
       if (form === 3) return makeQuestion("decompose", "foundation", total + " 去掉 " + known + "，还剩几？", answer, uniqueOptions(answer, 0, 10));
@@ -525,11 +526,12 @@
     placeValue: function () {
       var ones = rand(1, 9);
       var answer = 10 + ones;
-      var form = sample([1, 2, 3, 4]);
+      var form = sample([1, 2, 3, 4, 5]);
       var number = rand(11, 20);
       if (form === 1) return makeQuestion("placeValue", "grade1", "1个十和 " + ones + " 个一合起来是几？", answer, uniqueOptions(answer, 8, 20), makeNumberLine(["1个十", ones + "个一"]));
       if (form === 2) return makeQuestion("placeValue", "grade1", number + " 里面有几个十？", 1, ["0", "1", "2", "10"], makeNumberLine([number]));
-      if (form === 3) return makeQuestion("placeValue", "grade1", number + " 里面有几个一？", number - 10, uniqueOptions(number - 10, 0, 10), makeNumberLine([number]));
+      if (form === 3) return makeQuestion("placeValue", "grade1", number + " 的个位上是几？", number - 10, uniqueOptions(number - 10, 0, 10), makeNumberLine([number]));
+      if (form === 4) return makeQuestion("placeValue", "grade1", number + " 由1个十和几组成？", number - 10, uniqueOptions(number - 10, 0, 10), makeNumberLine([number]));
       return makeQuestion("placeValue", "grade1", "比 " + (number - 1) + " 多1的数是几？", number, uniqueOptions(number, 8, 20), makeNumberLine([number - 1, "?"]));
     },
     add10: function () {
@@ -755,6 +757,134 @@
     },
   };
 
+  var dailyMakers = {
+    story: function () {
+      var form = sample([1, 2, 3, 4, 5, 6]);
+      var a = rand(8, 18);
+      var b = rand(3, 9);
+      var c = rand(2, 7);
+      var answer;
+      var prompt;
+      if (form === 1) {
+        answer = a + b - c;
+        prompt = "书架上有 " + a + " 本书，又放上 " + b + " 本，借走 " + c + " 本。现在书架上有几本？";
+      } else if (form === 2) {
+        answer = a - b + c;
+        prompt = "盒子里有 " + a + " 支铅笔，小朋友拿走 " + b + " 支，又放回 " + c + " 支。盒子里现在有几支？";
+      } else if (form === 3) {
+        answer = a + b;
+        prompt = "一班有 " + a + " 人参加跳绳，二班比一班多 " + b + " 人。二班有几人参加？";
+      } else if (form === 4) {
+        answer = a - b;
+        prompt = "小红有 " + a + " 张贴纸，小明比小红少 " + b + " 张。小明有几张？";
+      } else if (form === 5) {
+        answer = a + b + c;
+        prompt = "第一行有 " + a + " 朵花，第二行有 " + b + " 朵，第三行有 " + c + " 朵。一共有几朵花？";
+      } else {
+        answer = a - b;
+        prompt = "停车场原来有 " + a + " 辆车，开走 " + b + " 辆。还剩几辆？";
+      }
+      return makeQuestion("story", "application", prompt, answer, [], "", "number");
+    },
+    queue: function () {
+      var before = rand(2, 8);
+      var after = rand(2, 8);
+      var form = sample([1, 2, 3]);
+      if (form === 1) return makeQuestion("logic", "application", "小明排队，前面有 " + before + " 人，后面有 " + after + " 人。这一队一共有几人？", before + after + 1, [], "", "number");
+      if (form === 2) return makeQuestion("logic", "application", "一队共有 " + (before + after + 1) + " 人，小明前面有 " + before + " 人。小明后面有几人？", after, [], "", "number");
+      return makeQuestion("logic", "application", "从前往后数，小明排第 " + (before + 1) + "；从后往前数，小明排第 " + (after + 1) + "。这一队共有几人？", before + after + 1, [], "", "number");
+    },
+    equation: function () {
+      var total = rand(12, 20);
+      var part = rand(3, 9);
+      var form = sample([1, 2, 3, 4]);
+      if (form === 1) return makeQuestion("equation", "application", "□ + " + part + " = " + total + "，□里填几？", total - part, [], "", "number");
+      if (form === 2) return makeQuestion("equation", "application", total + " - □ = " + part + "，□里填几？", total - part, [], "", "number");
+      if (form === 3) return makeQuestion("equation", "application", part + " + □ = " + total + "，□里填几？", total - part, [], "", "number");
+      return makeQuestion("equation", "application", "□ - " + part + " = " + (total - part) + "，□里填几？", total, [], "", "number");
+    },
+    compare: function () {
+      var a = rand(8, 18);
+      var b = rand(2, 8);
+      var c = rand(8, 18);
+      var d = rand(2, 8);
+      var left = sample([a + b, a - Math.min(b, a - 1)]);
+      var right = sample([c + d, c - Math.min(d, c - 1)]);
+      var leftText = left === a + b ? a + " + " + b : a + " - " + Math.min(b, a - 1);
+      var rightText = right === c + d ? c + " + " + d : c + " - " + Math.min(d, c - 1);
+      var answer = left === right ? "一样大" : left > right ? "左边大" : "右边大";
+      return makeQuestion("expressionCompare", "application", leftText + " 和 " + rightText + "，哪边大？", answer, ["左边大", "右边大", "一样大", "不能确定"]);
+    },
+    countRelation: function () {
+      var total = rand(12, 20);
+      var known = rand(4, total - 4);
+      var form = sample([1, 2, 3]);
+      if (form === 1) return makeQuestion("difference", "application", "公鸡和母鸡一共有 " + total + " 只，公鸡有 " + known + " 只，母鸡有几只？", total - known, [], "", "number");
+      if (form === 2) return makeQuestion("difference", "application", "红球和蓝球共 " + total + " 个，蓝球有 " + known + " 个，红球有几个？", total - known, [], "", "number");
+      return makeQuestion("difference", "application", "一共有 " + total + " 个水果，其中苹果有 " + known + " 个，其他水果有几个？", total - known, [], "", "number");
+    },
+    pattern: function () {
+      var patterns = [
+        { seq: [4, 7, 10, 13, "?"], answer: 16, options: [15, 16, 17, 18] },
+        { seq: [20, 17, 14, 11, "?"], answer: 8, options: [7, 8, 9, 10] },
+        { seq: ["红", "蓝", "蓝", "红", "蓝", "蓝", "?"], answer: "红", options: ["红", "蓝", "黄", "绿"] },
+        { seq: ["○", "△", "□", "○", "△", "?"], answer: "□", options: ["○", "△", "□", "☆"] },
+      ];
+      var p = sample(patterns);
+      return makeQuestion("pattern", "application", "看规律，问号应该是什么？", p.answer, p.options, makeNumberLine(p.seq));
+    },
+    timePage: function () {
+      var start = rand(2, 8);
+      var end = start + rand(3, 8);
+      return makeQuestion("story", "application", "小朋友今天从第 " + start + " 页看到第 " + end + " 页，今天看了多少页？", end - start + 1, [], "", "number");
+    },
+    geometry: function () {
+      var form = sample([1, 2, 3]);
+      var shape;
+      if (form === 1) return makeQuestion("planeShape", "advanced", "长方形有几个角？", 4, ["3", "4", "5", "6"], planeShapeSvg("长方形"));
+      if (form === 2) return makeQuestion("planeShape", "advanced", "三角形有几条边？", 3, ["2", "3", "4", "5"], planeShapeSvg("三角形"));
+      shape = sample(["正方体", "长方体", "圆柱", "球"]);
+      return makeQuestion("solidShape", "grade1", "这个立体图形最像什么？", shape, ["正方体", "长方体", "圆柱", "球"], solidShapeSvg(shape));
+    },
+  };
+
+  function generateDailyQuestions() {
+    var plan = ["story", "story", "queue", "equation", "compare", "countRelation", "pattern", "timePage", "geometry", "story"];
+    var usedKeys = {};
+    var usedTypeAnswers = {};
+    var questions = [];
+    var i;
+    var makerName;
+    for (i = 0; i < plan.length; i += 1) {
+      makerName = plan[i];
+      questions.push(createUniqueDailyQuestion(makerName, usedKeys, usedTypeAnswers));
+    }
+    return shuffle(questions);
+  }
+
+  function createUniqueDailyQuestion(makerName, usedKeys, usedTypeAnswers) {
+    var fallback = null;
+    var attempt;
+    var question;
+    var exactKey;
+    var typeAnswerKey;
+    for (attempt = 0; attempt < 40; attempt += 1) {
+      question = dailyMakers[makerName]();
+      exactKey = getQuestionKey(question);
+      typeAnswerKey = makerName + "|" + question.answer;
+      if (!fallback) fallback = question;
+      if (!usedKeys[exactKey] && !usedTypeAnswers[typeAnswerKey]) {
+        usedKeys[exactKey] = true;
+        usedTypeAnswers[typeAnswerKey] = true;
+        return question;
+      }
+    }
+    exactKey = getQuestionKey(fallback);
+    usedKeys[exactKey] = true;
+    usedTypeAnswers[makerName + "|" + fallback.answer] = true;
+    return fallback;
+  }
+
   function generateQuestions() {
     var plan = ["count", "compare", "decompose", "placeValue", "add10", "subtract10", "teenSense", "add20", "makeTen", "equation", "expressionCompare", "difference", "solidShape", "position", "pattern", "logic", "story", "borrowSub", "hundredSense", "planeShape"];
     var usedKeys = {};
@@ -783,7 +913,26 @@
     safeCancelSpeech();
     clearFlowTimers();
     clearStoredAssessment();
+    state.mode = "assessment";
     state.questions = generateQuestions();
+    state.index = 0;
+    state.answers = [];
+    state.selectedAnswer = "";
+    state.toastMessage = "";
+    state.posterVisible = false;
+    state.startedAt = new Date().getTime();
+    state.questionStartedAt = new Date().getTime();
+    state.screen = "test";
+    state.now = new Date().getTime();
+    startTicker();
+    renderAndMaybeSpeak(true);
+  }
+
+  function startDailyPractice() {
+    safeCancelSpeech();
+    clearFlowTimers();
+    state.mode = "daily";
+    state.questions = generateDailyQuestions();
     state.index = 0;
     state.answers = [];
     state.selectedAnswer = "";
@@ -887,6 +1036,11 @@
     safeCancelSpeech();
     stopTicker();
     clearFlowTimers();
+    if (state.mode === "daily") {
+      state.screen = "dailyResult";
+      render();
+      return;
+    }
     state.result = calculateResult(state.answers);
     state.unlockOverlay = false;
     state.posterVisible = false;
@@ -1097,7 +1251,7 @@
 
   function renderHome() {
     app.innerHTML =
-      '<section class="hero page-fade"><div class="home-hero"><div class="free-badge">免费测评</div><h1>测一测<br>孩子能不能顺利衔接一年级数学</h1><p class="lead hero-lead">20道题｜约5分钟完成<br>覆盖20以内数感、加减法、图形、逻辑思维。</p></div><div class="parent-guide value-guide"><div class="guide-step"><span class="step-icon">1</span><strong>家长读题</strong><span>按题目轻声读给孩子听。</span></div><div class="guide-step"><span class="step-icon">2</span><strong>孩子回答</strong><span>孩子口答，家长代为点击。</span></div><div class="guide-step"><span class="step-icon">3</span><strong>AI生成测评报告</strong><span>生成等级、优势和家庭建议。</span></div></div><div class="home-cta"><button class="primary hero-button" data-action="start">立即免费测评</button><div class="sub-actions"><button class="text-button" data-action="practice">试做一题</button><button class="text-button" data-action="share-page">分享给家长</button></div><button class="link-button" data-action="preview">查看评分标准 &gt;</button></div><p class="footer-hint">结果仅用于家庭观察和暑假练习规划，不作为医学或教育诊断。</p></section>';
+      '<section class="hero page-fade"><div class="home-hero"><div class="free-badge">免费测评</div><h1>测一测<br>孩子能不能顺利衔接一年级数学</h1><p class="lead hero-lead">20道题｜约5分钟完成<br>覆盖20以内数感、加减法、图形、逻辑思维。</p></div><div class="parent-guide value-guide"><div class="guide-step"><span class="step-icon">1</span><strong>家长读题</strong><span>按题目轻声读给孩子听。</span></div><div class="guide-step"><span class="step-icon">2</span><strong>孩子回答</strong><span>孩子口答，家长代为点击。</span></div><div class="guide-step"><span class="step-icon">3</span><strong>AI生成测评报告</strong><span>生成等级、优势和家庭建议。</span></div></div><div class="home-cta"><button class="primary hero-button" data-action="start">立即免费测评</button><button class="secondary daily-button" data-action="daily">每天高阶练习题</button><div class="sub-actions"><button class="text-button" data-action="practice">试做一题</button><button class="text-button" data-action="share-page">分享给家长</button></div><button class="link-button" data-action="preview">查看评分标准 &gt;</button></div><p class="footer-hint">高阶练习适合日常巩固，题目更接近一年级真实练习。</p></section>';
   }
 
   function renderPractice() {
@@ -1173,15 +1327,7 @@
       progress +
       '%"></div></div><div class="progress-blocks">' +
       renderProgressBlocks() +
-      '</div><div class="timer-strip"><span>总计时<strong data-total-timer>' +
-      formatTime(totalElapsed) +
-      '</strong></span><span>本题<strong data-question-timer>' +
-      formatTime(questionElapsed) +
-      "</strong></span><span>已答<strong>" +
-      state.answers.length +
-      " / " +
-      state.questions.length +
-      '</strong></span></div><div class="test-main"><article class="question-card"><div class="question-meta"><span class="tag">' +
+      '</div><div class="test-main"><article class="question-card"><div class="question-meta"><span class="tag">' +
       question.typeLabel +
       '</span><span class="tag alt">' +
       difficultyLabel(question.difficulty) +
@@ -1189,7 +1335,7 @@
       question.referenceSeconds +
       " 秒</span>" +
       readButtonHtml() +
-      '</div><h2 class="question-title">' +
+      '</div><div class="question-center"><h2 class="question-title">' +
       escapeHtml(question.prompt) +
       '</h2><div class="question-visual ' +
       (question.visual ? "" : "hidden") +
@@ -1197,9 +1343,18 @@
       question.visual +
       '</div><div class="answer-area">' +
       renderAnswerInput(question) +
-      '</div><div class="question-actions">' +
+      '</div></div><div class="question-bottom"><div class="question-actions">' +
       actionHtml +
-      '</div></article><aside class="panel"><div><p class="small">总用时</p><div class="timer" data-total-timer>' +
+      '</div><div class="timer-strip"><span>总计时 <strong data-total-timer>' +
+      formatTime(totalElapsed) +
+      '</strong></span><span>本题 <strong data-question-timer>' +
+      formatTime(questionElapsed) +
+      "</strong></span><span>已答 <strong>" +
+      state.answers.length +
+      " / " +
+      state.questions.length +
+      "</strong></span></div></div>" +
+      '</article><aside class="panel"><div><p class="small">总用时</p><div class="timer" data-total-timer>' +
       formatTime(totalElapsed) +
       '</div></div><div><p class="small">本题用时</p><div class="timer" data-question-timer>' +
       formatTime(questionElapsed) +
@@ -1269,6 +1424,34 @@
       '</button><button class="secondary" data-action="restart">重新测一次</button></div></article><p class="footer-hint">不会读取真实分享状态，点击确认后即可查看结果。</p>' +
       overlay +
       "</section>";
+  }
+
+  function renderDailyResult() {
+    var total = state.answers.length;
+    var correct = countCorrect(state.answers);
+    var percent = total ? Math.round((correct / total) * 100) : 0;
+    var mistakes = filterAnswers(state.answers, function (answer) {
+      return !answer.correct;
+    });
+    var title = percent >= 90 ? "今日高阶练习很稳" : percent >= 70 ? "今日练习完成不错" : "今日重点复盘错题";
+    app.innerHTML =
+      '<section class="result-layout page-fade"><div class="topbar"><div class="brand"><span class="brand-mark">练</span><span>每日高阶练习</span></div><button class="secondary" data-action="home">返回首页</button></div><article class="result-card result-summary"><p class="pill">一年级真实题型练习</p><h1 class="level">' +
+      title +
+      '</h1><p class="lead">这组题更偏一年级练习纸里的应用题、填空题和数量关系题。</p><div class="score-row"><div class="stat score-stat"><strong>' +
+      correct +
+      "/" +
+      total +
+      '</strong><span>答对题数</span></div><div class="stat"><strong>' +
+      percent +
+      '%</strong><span>正确率</span></div><div class="stat"><strong>' +
+      formatTime(elapsedSeconds(state.startedAt)) +
+      '</strong><span>总用时</span></div><div class="stat"><strong>' +
+      mistakes.length +
+      '</strong><span>错题</span></div></div></article><div class="report-grid"><div class="mini-card"><h3>今日建议</h3><p>' +
+      (mistakes.length ? "先把错题讲清楚：让孩子说一说题目问什么、已知什么、要求什么，再列式。" : "今天表现很棒，可以继续保持每天10分钟的综合题练习。") +
+      '</p></div><div class="mini-card review-card"><h3>错题复盘</h3>' +
+      (mistakes.length ? '<div class="mistake-list">' + renderMistakes(mistakes) + "</div>" : "<p>这组高阶题没有错题，可以明天继续挑战。</p>") +
+      '</div><div class="result-actions"><button class="primary hero-button" data-action="daily">再来一组高阶练习</button><button class="secondary" data-action="start">做入学测评</button></div></div></section>';
   }
 
   function getDisplayGrade(score) {
@@ -1437,6 +1620,7 @@
       if (state.screen === "analyzing") renderAnalyzing();
       if (state.screen === "unlock") renderUnlock();
       if (state.screen === "result") renderResult();
+      if (state.screen === "dailyResult") renderDailyResult();
     } catch (error) {
       app.innerHTML = '<section class="result-card"><h1 class="level">页面加载遇到问题</h1><p class="lead">请刷新页面再试。如果在微信里打开仍然白屏，可以先用 Safari 打开测试。</p></section>';
     }
@@ -1481,6 +1665,7 @@
     if (action === "read-question") speakCurrentQuestion();
     if (action === "share-page") sharePage();
     if (action === "start") startTest();
+    if (action === "daily") startDailyPractice();
     if (action === "preview") {
       safeCancelSpeech();
       state.screen = "standards";
