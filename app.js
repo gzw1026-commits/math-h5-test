@@ -1532,7 +1532,7 @@
 
   function renderPosterPreviewCard() {
     return (
-      '<div class="share-poster-card"><div class="poster-free">免费测评</div><h2>小学数学入学准备测评</h2><p class="poster-line">20道题｜约5分钟</p><p class="poster-copy">测一测孩子能不能顺利衔接一年级数学</p><div class="poster-qr"><img src="' +
+      '<div class="share-poster-card"><div class="poster-free">免费测评</div><h2>小学数学入学准备测评</h2><p class="poster-line">20题｜约5分钟</p><div class="poster-feature-block"><p class="poster-section-title">📚 覆盖7大入学能力</p><div class="poster-check-grid"><span>✓ 数感认知</span><span>✓ 加减计算</span><span>✓ 图形空间</span><span>✓ 规律推理</span><span>✓ 比较分类</span><span>✓ 应用思维</span><span>✓ 逻辑判断</span></div></div><div class="poster-feature-block poster-gain-block"><p class="poster-section-title">完成测评即可获得</p><div class="poster-check-list"><span>✓ 能力等级</span><span>✓ 薄弱知识点分析</span><span>✓ 入学准备建议</span></div></div><div class="poster-qr"><img src="' +
       getQrImageUrl(220) +
       '" alt="扫码免费测评二维码"></div><strong>扫码免费测评</strong></div>'
     );
@@ -1620,6 +1620,11 @@
     var canvas = document.createElement("canvas");
     var ctx = canvas.getContext("2d");
     var gradient;
+    var abilities = ["数感认知", "加减计算", "图形空间", "规律推理", "比较分类", "应用思维", "逻辑判断"];
+    var gains = ["能力等级", "薄弱知识点分析", "入学准备建议"];
+    var i;
+    var x;
+    var y;
     canvas.width = 1080;
     canvas.height = 1440;
     gradient = ctx.createLinearGradient(0, 0, 1080, 1440);
@@ -1646,29 +1651,54 @@
     ctx.fillStyle = "#182032";
     ctx.font = "900 78px sans-serif";
     ctx.textAlign = "left";
-    drawWrappedText(ctx, "小学数学入学准备测评", 110, 330, 860, 92);
+    drawWrappedText(ctx, "小学数学入学准备测评", 110, 298, 860, 92);
 
     ctx.fillStyle = "#12b76a";
     ctx.font = "900 46px sans-serif";
-    ctx.fillText("20道题｜约5分钟", 110, 510);
-
-    ctx.fillStyle = "#475467";
-    ctx.font = "700 44px sans-serif";
-    drawWrappedText(ctx, "测一测孩子能不能顺利衔接一年级数学", 110, 620, 830, 62);
-
-    drawRoundRect(ctx, 335, 760, 410, 410, 36);
-    ctx.fillStyle = "#f7fff9";
-    ctx.fill();
-    if (qrImage) ctx.drawImage(qrImage, 385, 810, 310, 310);
-    else drawFallbackQr(ctx, 385, 810, 310);
+    ctx.fillText("20题｜约5分钟", 110, 466);
 
     ctx.fillStyle = "#182032";
-    ctx.font = "900 46px sans-serif";
+    ctx.font = "900 40px sans-serif";
+    ctx.fillText("📚 覆盖7大入学能力", 110, 560);
+
+    ctx.font = "700 34px sans-serif";
+    for (i = 0; i < abilities.length; i += 1) {
+      x = i % 2 === 0 ? 126 : 548;
+      y = 632 + Math.floor(i / 2) * 58;
+      ctx.fillStyle = "#12b76a";
+      ctx.fillText("✓", x, y);
+      ctx.fillStyle = "#344054";
+      ctx.fillText(abilities[i], x + 42, y);
+    }
+
+    drawRoundRect(ctx, 110, 850, 860, 188, 34);
+    ctx.fillStyle = "#fff7e8";
+    ctx.fill();
+    ctx.fillStyle = "#ff5a1f";
+    ctx.font = "900 38px sans-serif";
+    ctx.fillText("完成测评即可获得", 150, 914);
+    ctx.font = "700 32px sans-serif";
+    for (i = 0; i < gains.length; i += 1) {
+      x = 156 + i * 270;
+      ctx.fillStyle = "#12b76a";
+      ctx.fillText("✓", x, 986);
+      ctx.fillStyle = "#344054";
+      ctx.fillText(gains[i], x + 38, 986);
+    }
+
+    drawRoundRect(ctx, 335, 1060, 410, 300, 36);
+    ctx.fillStyle = "#f7fff9";
+    ctx.fill();
+    if (qrImage) ctx.drawImage(qrImage, 410, 1090, 260, 260);
+    else drawFallbackQr(ctx, 410, 1090, 260);
+
+    ctx.fillStyle = "#182032";
+    ctx.font = "900 40px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("扫码免费测评", 540, 1250);
+    ctx.fillText("扫码免费测评", 540, 1394);
     ctx.fillStyle = "#667085";
     ctx.font = "500 26px sans-serif";
-    ctx.fillText(getHomeShareUrl(), 540, 1304);
+    ctx.fillText(getHomeShareUrl(), 540, 1428);
     return canvas.toDataURL("image/png");
   }
 

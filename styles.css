@@ -1031,11 +1031,11 @@ button:disabled {
   display: grid;
   align-content: center;
   justify-items: center;
-  gap: 8px;
+  gap: 7px;
   min-height: 0;
   border: 1px solid rgba(18, 183, 106, 0.16);
   border-radius: 26px;
-  padding: 16px;
+  padding: 14px 15px;
   background: linear-gradient(160deg, #fffdf7, #f0fff6);
   box-shadow: var(--shadow);
   text-align: center;
@@ -1052,7 +1052,7 @@ button:disabled {
 
 .share-poster-card h2 {
   color: var(--ink);
-  font-size: 25px;
+  font-size: 24px;
   line-height: 1.16;
 }
 
@@ -1062,17 +1062,54 @@ button:disabled {
   font-weight: 950;
 }
 
-.poster-copy {
-  max-width: 280px;
-  color: var(--muted);
+.poster-feature-block {
+  width: 100%;
+  display: grid;
+  gap: 7px;
+  border-radius: 18px;
+  padding: 10px 12px;
+  background: rgba(18, 183, 106, 0.08);
+}
+
+.poster-gain-block {
+  background: rgba(255, 90, 31, 0.08);
+}
+
+.poster-section-title {
+  color: var(--ink);
   font-size: 14px;
-  line-height: 1.42;
+  font-weight: 950;
+}
+
+.poster-check-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
+  text-align: left;
+}
+
+.poster-check-grid span,
+.poster-check-list span {
+  color: #344054;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.poster-check-grid span {
+  color: #157f4f;
+}
+
+.poster-check-list {
+  display: grid;
+  gap: 5px;
+  text-align: left;
 }
 
 .poster-qr {
   display: grid;
-  width: 190px;
-  height: 190px;
+  width: 166px;
+  height: 166px;
   place-items: center;
   border-radius: 22px;
   background: #ffffff;
@@ -1080,8 +1117,8 @@ button:disabled {
 }
 
 .poster-qr img {
-  width: 174px;
-  height: 174px;
+  width: 150px;
+  height: 150px;
   display: block;
 }
 
