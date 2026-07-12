@@ -216,6 +216,17 @@
     return '<div class="shape-visual" data-shape="' + kind + '">' + svgs[kind] + "</div>";
   }
 
+  function planeShapeChoicesSvg() {
+    return (
+      '<div class="shape-set-visual" aria-label="候选平面图形">' +
+      '<svg class="shape-mini-svg" viewBox="0 0 120 100" role="img" aria-label="圆形"><circle cx="60" cy="50" r="32" fill="#69a7d9" stroke="#376f99" stroke-width="5"/></svg>' +
+      '<svg class="shape-mini-svg" viewBox="0 0 120 100" role="img" aria-label="三角形"><polygon points="60,14 100,84 20,84" fill="#f2b84b" stroke="#9a6c13" stroke-width="5" stroke-linejoin="round"/></svg>' +
+      '<svg class="shape-mini-svg" viewBox="0 0 120 100" role="img" aria-label="正方形"><rect x="28" y="18" width="64" height="64" fill="#8067b7" stroke="#4d4174" stroke-width="5"/></svg>' +
+      '<svg class="shape-mini-svg" viewBox="0 0 120 100" role="img" aria-label="长方形"><rect x="16" y="30" width="88" height="42" fill="#e86f55" stroke="#9b4b3d" stroke-width="5"/></svg>' +
+      "</div>"
+    );
+  }
+
   function makeQuestion(type, difficulty, prompt, answer, options, visual, input) {
     var meta = TYPE_META[type];
     var question = {
@@ -836,8 +847,8 @@
       var answer = sample(options);
       var form = sample([1, 2, 3]);
       if (form === 1) return makeQuestion("planeShape", "advanced", "这个平面图形叫什么？", answer, shuffle(options), planeShapeSvg(answer));
-      if (form === 2) return makeQuestion("planeShape", "advanced", "哪种图形有4条一样长的边？", "正方形", shuffle(options), planeShapeSvg("正方形"));
-      return makeQuestion("planeShape", "advanced", "哪种图形没有角？", "圆形", shuffle(options), planeShapeSvg("圆形"));
+      if (form === 2) return makeQuestion("planeShape", "advanced", "下面这些图形里，哪种图形有4条一样长的边？", "正方形", shuffle(options), planeShapeChoicesSvg());
+      return makeQuestion("planeShape", "advanced", "下面这些图形里，哪种图形没有角？", "圆形", shuffle(options), planeShapeChoicesSvg());
     },
   };
 
