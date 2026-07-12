@@ -1552,13 +1552,15 @@
   function renderSharePoster() {
     var saveButton = isWeChatBrowser() ? "" : '<a class="secondary save-poster-button" href="' + escapeHtml(state.posterImageUrl) + '" download="小学数学入学准备测评海报.png">保存图片</a>';
     var overlay = state.posterPreviewOpen && state.posterImageUrl
-      ? '<div class="poster-preview-mask"><div class="poster-preview-panel"><p>' +
-        (isWeChatBrowser() ? "长按图片保存，发送给家人或家长群。" : "可保存图片后发送给家人或家长群。") +
-        '</p><img src="' +
+      ? '<div class="poster-preview-mask"><div class="poster-preview-panel"><div class="poster-save-callout"><span class="poster-arrow">↓</span><strong>' +
+        (isWeChatBrowser() ? "长按图片保存" : "保存图片后分享") +
+        '</strong><p>' +
+        (isWeChatBrowser() ? "发送给家人或家长群" : "发送给家人或家长群") +
+        '</p></div><img src="' +
         escapeHtml(state.posterImageUrl) +
         '" alt="分享海报大图">' +
         saveButton +
-        '<button class="text-button" data-action="close-poster-preview">关闭预览</button></div></div>'
+        '<div class="poster-next-callout"><span class="poster-arrow">↓</span><button class="primary poster-result-button" data-action="confirm-unlock">我已保存，查看结果</button><button class="poster-close-button" data-action="close-poster-preview">关闭预览</button></div></div></div>'
       : "";
     app.innerHTML =
       '<section class="share-poster-layout page-fade"><div class="share-poster-head"><h1>测评已完成</h1><p>孩子的完整测评报告已经生成</p></div>' +
