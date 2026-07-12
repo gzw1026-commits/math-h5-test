@@ -623,7 +623,7 @@
       var b = rand(2, Math.min(7, 10 - a));
       var form = sample([1, 2, 3]);
       if (form === 1) return makeQuestion("add10", "foundation", a + " + " + b + " = ?", a + b, uniqueOptions(a + b, 0, 12));
-      if (form === 2) return makeQuestion("add10", "foundation", "左边有 " + a + " 个，右边有 " + b + " 个，一共有几个？", a + b, uniqueOptions(a + b, 0, 12), makeNumberLine([a, b]));
+      if (form === 2) return makeQuestion("add10", "foundation", "第一组有 " + a + " 个圆点，第二组有 " + b + " 个圆点，合起来一共有几个圆点？", a + b, uniqueOptions(a + b, 0, 12), makeNumberLine([a + "个", b + "个"]));
       return makeQuestion("add10", "foundation", "从 " + a + " 往后数 " + b + " 个，数到几？", a + b, uniqueOptions(a + b, 0, 12), makeNumberLine([a, "+ " + b]));
     },
     subtract10: function () {
